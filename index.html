@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kavithakal Studio</title>
+    <!-- Google Fonts (Inter is the closest match to Apple's San Francisco font) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Empty Favicon to prevent 404 -->
+    <link rel="icon" href="./public/logo copy.png" type="image/png">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* A fallback simple spinner so page doesn't look blank while loading */
+        #root:empty::before {
+            content: "Loading...";
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Inter", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #ff2d6c;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <!-- React via CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+    <!-- Application Logic (No JSX) -->
+    <script src="config.js"></script>
+    <script src="animations.js"></script>
+    <script src="gallery.js"></script>
+    <script src="simple_pages.js"></script>
+    <script src="lightbox.js"></script>
+    <script src="home.js"></script>
+    <script src="portfolio.js"></script>
+    <script src="montages.js"></script>
+    <script src="admin.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
