@@ -25,12 +25,17 @@ function VideoCard({ videoUrl, title, thumbnail }) {
     const isYouTube = videoUrl && (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be'));
     const isVimeo = videoUrl && videoUrl.includes('vimeo.com');
 
+    const getYouTubeID = (url) => {
+        if (!url) return null;
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : null;
+    };
+
     const getYouTubeEmbedUrl = (url) => {
-        let videoId = '';
-        if (url.includes('watch?v=')) videoId = url.split('v=')[1].split('&')[0];
-        else if (url.includes('youtu.be/')) videoId = url.split('youtu.be/')[1].split('?')[0];
-        else if (url.includes('embed/')) videoId = url.split('embed/')[1].split('?')[0];
-        return `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=${isMuted ? 1 : 0}&loop=1&playlist=${videoId}&rel=0`;
+        const videoId = getYouTubeID(url);
+        if (!videoId) return url;
+        return `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=${isMuted ? 1 : 0}&loop=1&playlist=${videoId}&rel=0&enablejsapi=1`;
     };
 
     const togglePlay = (e) => {

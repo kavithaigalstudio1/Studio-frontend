@@ -223,6 +223,13 @@ function AdminReviewVideoManager({ onUpdate }) {
         fileInputs.forEach(input => input.value = "");
     };
 
+    const getYouTubeID = (url) => {
+        if (!url) return null;
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : null;
+    };
+
     return el('div', { className: 'admin-section', style: { marginBottom: '3rem' } },
         el('div', { className: 'welcome-card', style: { marginBottom: '2rem' } },
             el('h2', null, 'Showcase Videos (Max 6)'),
@@ -292,10 +299,10 @@ function AdminReviewVideoManager({ onUpdate }) {
                 let displayThumb = vid.thumb;
 
                 if (!displayThumb && isYouTube) {
-                    let videoId = '';
-                    if (vid.videoUrl.includes('watch?v=')) videoId = vid.videoUrl.split('v=')[1].split('&')[0];
-                    else if (vid.videoUrl.includes('youtu.be/')) videoId = vid.videoUrl.split('youtu.be/')[1].split('?')[0];
-                    displayThumb = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+                    const videoId = getYouTubeID(vid.videoUrl);
+                    if (videoId) {
+                        displayThumb = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+                    }
                 }
 
                 return el('div', { key: idx, className: 'admin-item-card' },

@@ -90,25 +90,29 @@ function ReviewVideoCard({ videoUrl, thumbnail, title }) {
 
     if (!videoUrl) return null;
 
+    const getYouTubeID = (url) => {
+        if (!url) return null;
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : null;
+    };
+
     const isYouTube = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
     let embedUrl = videoUrl;
 
     if (isYouTube) {
-        if (videoUrl.includes('watch?v=')) {
-            const videoId = videoUrl.split('v=')[1].split('&')[0];
-            embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`;
-        } else if (videoUrl.includes('youtu.be/')) {
-            const videoId = videoUrl.split('youtu.be/')[1].split('?')[0];
-            embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`;
+        const videoId = getYouTubeID(videoUrl);
+        if (videoId) {
+            embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&enablejsapi=1`;
         }
     }
 
     let displayThumb = thumbnail;
     if (!displayThumb && isYouTube) {
-        let videoId = '';
-        if (videoUrl.includes('watch?v=')) videoId = videoUrl.split('v=')[1].split('&')[0];
-        else if (videoUrl.includes('youtu.be/')) videoId = videoUrl.split('youtu.be/')[1].split('?')[0];
-        displayThumb = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+        const videoId = getYouTubeID(videoUrl);
+        if (videoId) {
+            displayThumb = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+        }
     }
 
     if (!isPlaying) {
