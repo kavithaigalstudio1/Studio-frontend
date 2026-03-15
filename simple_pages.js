@@ -128,6 +128,7 @@ function ReviewVideoCard({ videoUrl, thumbnail, title }) {
             }) :
             el('video', {
                 src: videoUrl,
+                poster: thumbnail,
                 controls: true,
                 autoPlay: true,
                 style: { width: '100%', height: '100%', backgroundColor: '#000' }

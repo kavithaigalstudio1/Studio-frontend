@@ -49,6 +49,7 @@ function MontageVideoCard({ videoUrl, clientName, thumbnail }) {
                 }) :
                 el('video', {
                     src: videoUrl,
+                    poster: thumbnail,
                     className: 'full-video',
                     controls: true,
                     autoPlay: true,

@@ -3221,8 +3221,6 @@ footer span {
         gap: 10px;
         text-align: center;
     }
-
-    .review-hero-section h1 {}
 }
 
 /* ============================================================ 
@@ -3540,8 +3538,6 @@ footer span {
    DESKTOP & LARGE SCREEN REFINEMENTS (>1023px)
    ========================================== */
 @media (min-width: 1024px) {
-    .review-hero-section h1 {}
-
     .review-videos-grid {
         display: flex;
         flex-direction: row;
@@ -3673,8 +3669,6 @@ footer span {
    MOBILE TINY SCREEN TWEAKS (320px - 425px)
    ========================================== */
 @media (max-width: 425px) {
-    .review-hero-section h1 {}
-
     .review-video-item {
         border-radius: 16px;
     }
