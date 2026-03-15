@@ -89,10 +89,10 @@ function ReviewVideoCard({ videoUrl, thumbnail, title }) {
     if (isYouTube) {
         if (videoUrl.includes('watch?v=')) {
             const videoId = videoUrl.split('v=')[1].split('&')[0];
-            embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&origin=${window.location.origin}`;
+            embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`;
         } else if (videoUrl.includes('youtu.be/')) {
             const videoId = videoUrl.split('youtu.be/')[1].split('?')[0];
-            embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&origin=${window.location.origin}`;
+            embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`;
         }
     }
 
