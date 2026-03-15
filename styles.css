@@ -2277,6 +2277,31 @@ footer span {
     transform: translateY(-2px);
 }
 
+.video-custom-controls {
+    pointer-events: auto;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.review-video-item:hover .video-custom-controls,
+.montage-card:hover .video-custom-controls,
+.active-video .video-custom-controls {
+    opacity: 1;
+}
+
+@media (max-width: 768px) {
+    .video-custom-controls {
+        opacity: 1 !important; /* Always visible on mobile for UX */
+        padding: 10px !important;
+    }
+    
+    .video-mini-btn {
+        width: 34px !important;
+        height: 34px !important;
+        font-size: 0.9rem !important;
+    }
+}
+
 .video-info {
     position: absolute;
     bottom: 0;
@@ -2496,6 +2521,35 @@ footer span {
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+/* Stable containers for video players to prevent jumps during swap */
+.review-video-item,
+.montage-card {
+    aspect-ratio: 16 / 9;
+    background-color: #000;
+    will-change: transform;
+    overflow: hidden;
+}
+
+.active-video iframe,
+.active-video video {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    display: block;
+}
+
+/* Disable pointer events on content when Lenis is scrolling to prevent "sticking" on iframes */
+html.lenis-scrolling iframe,
+html.lenis-scrolling video,
+html.lenis-scrolling .active-video {
+    pointer-events: none !important;
+}
+
+/* Ensure smooth pointer event return */
+iframe, video {
+    transition: pointer-events 0.1s ease;
 }
 
 .montage-overlay {

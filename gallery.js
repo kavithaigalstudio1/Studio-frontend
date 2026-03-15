@@ -22,21 +22,27 @@ function VideoCard({ videoUrl, title, thumbnail }) {
     }, []);
 
     // Detect if the URL is a YouTube link
-    const isYouTube = videoUrl && (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be'));
+    const getYouTubeId = (url) => {
+        if (!url) return '';
+        if (url.length === 11) return url;
+        if (url.includes('watch?v=')) return url.split('v=')[1].split('&')[0];
+        if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split('?')[0];
+        if (url.includes('embed/')) return url.split('embed/')[1].split('?')[0];
+        return '';
+    };
+
+    const videoId = getYouTubeId(videoUrl || '');
+    const isYouTube = videoId !== '' || (videoUrl && (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')));
     const isVimeo = videoUrl && videoUrl.includes('vimeo.com');
 
-    const getYouTubeID = (url) => {
-        if (!url) return null;
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
-        const match = url.match(regExp);
-        return (match && match[2].length === 11) ? match[2] : null;
+    const getYouTubeEmbedUrl = (url) => {
+        const id = getYouTubeId(url);
+        return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=${isMuted ? 1 : 0}&loop=1&playlist=${id}&origin=${window.location.origin}`;
     };
 
-    const getYouTubeEmbedUrl = (url) => {
-        const videoId = getYouTubeID(url);
-        if (!videoId) return url;
-        return `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=${isMuted ? 1 : 0}&loop=1&playlist=${videoId}&rel=0&enablejsapi=1`;
-    };
+    if (videoUrl && !isYouTube && !isVimeo && !videoUrl.startsWith('http') && !videoUrl.startsWith('//') && !videoUrl.startsWith('data:')) {
+        return null;
+    }
 
     const togglePlay = (e) => {
         if (e) e.stopPropagation();
@@ -93,21 +99,22 @@ function VideoCard({ videoUrl, title, thumbnail }) {
 
     return el('div', {
         ref: wrapperRef,
-        className: 'video-card-wrapper',
+        className: `video-card-wrapper ${isPlaying ? 'active-video' : ''}`,
         onMouseEnter: () => setIsHovered(true),
         onMouseLeave: () => setIsHovered(false),
         onClick: togglePlay,
-        style: { cursor: 'pointer', background: '#000' }
+        style: { cursor: 'pointer', background: '#000', position: 'relative', overflow: 'hidden' }
     },
-        isYouTube ?
+        // 1. Player Layer
+        isPlaying && (isYouTube ?
             el('iframe', {
                 id: `yt-${title.replace(/\s+/g, '')}`,
-                src: isPlaying ? getYouTubeEmbedUrl(videoUrl) : '',
+                src: getYouTubeEmbedUrl(videoUrl),
                 className: 'film-video',
                 frameBorder: '0',
                 allow: 'autoplay; fullscreen; picture-in-picture',
                 allowFullScreen: true,
-                style: { width: '100%', height: '100%', display: isPlaying ? 'block' : 'none', position: 'absolute', top: 0, left: 0 }
+                style: { width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: 1 }
             }) :
             el('video', {
                 ref: videoRef,
@@ -117,14 +124,27 @@ function VideoCard({ videoUrl, title, thumbnail }) {
                 muted: isMuted,
                 loop: true,
                 playsInline: true,
+                autoPlay: true,
+                style: { width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0, zIndex: 1 },
                 onPlay: () => setIsPlaying(true),
                 onPause: () => setIsPlaying(false)
-            }),
+            })
+        ),
 
-        (!isPlaying || !isYouTube) && el('img', {
+        // 2. Thumbnail Layer (Hidden when playing non-YouTube video)
+        (!isPlaying || isYouTube) && el('img', {
             src: thumbnail || 'https://via.placeholder.com/600x338?text=Play+Video',
-            className: 'film-video',
-            style: { display: isPlaying && !isYouTube ? 'none' : 'block', position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }
+            className: 'film-video thumbnail-layer',
+            style: { 
+                position: 'absolute', 
+                top: 0, 
+                left: 0, 
+                width: '100%', 
+                height: '100%', 
+                objectFit: 'cover',
+                zIndex: isPlaying ? 0 : 2, // Behind iframe when playing, on top when stopped
+                display: (isPlaying && !isYouTube) ? 'none' : 'block'
+            }
         }),
 
         el('div', {

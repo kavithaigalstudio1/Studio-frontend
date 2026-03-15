@@ -208,26 +208,26 @@ function AdminReviewVideoManager({ onUpdate }) {
     };
 
     const addReviewVideo = () => {
-        if (!newVid.videoUrl) {
+        let videoUrl = newVid.videoUrl;
+        if (!videoUrl) {
             alert('Please provide a video URL or upload a file.');
             return;
         }
+
+        // Automatic YouTube ID correction
+        if (videoUrl.length === 11 && !videoUrl.includes('.') && !videoUrl.includes('/')) {
+            videoUrl = `https://www.youtube.com/watch?v=${videoUrl}`;
+        }
+
         if (videos.length >= 6) {
             alert('Only 6 videos allowed!');
             return;
         }
-        saveChanges([...videos, newVid]);
+        saveChanges([...videos, { ...newVid, videoUrl }]);
         setNewVid({ videoUrl: '', thumb: '' });
         // Clear file inputs
         const fileInputs = document.querySelectorAll('input[type="file"]');
         fileInputs.forEach(input => input.value = "");
-    };
-
-    const getYouTubeID = (url) => {
-        if (!url) return null;
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
-        const match = url.match(regExp);
-        return (match && match[2].length === 11) ? match[2] : null;
     };
 
     return el('div', { className: 'admin-section', style: { marginBottom: '3rem' } },
@@ -299,10 +299,10 @@ function AdminReviewVideoManager({ onUpdate }) {
                 let displayThumb = vid.thumb;
 
                 if (!displayThumb && isYouTube) {
-                    const videoId = getYouTubeID(vid.videoUrl);
-                    if (videoId) {
-                        displayThumb = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
-                    }
+                    let videoId = '';
+                    if (vid.videoUrl.includes('watch?v=')) videoId = vid.videoUrl.split('v=')[1].split('&')[0];
+                    else if (vid.videoUrl.includes('youtu.be/')) videoId = vid.videoUrl.split('youtu.be/')[1].split('?')[0];
+                    displayThumb = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
                 }
 
                 return el('div', { key: idx, className: 'admin-item-card' },

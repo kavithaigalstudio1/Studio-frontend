@@ -80,53 +80,74 @@ window.BookShootCTA = BookShootCTA;
 
 function ReviewVideoCard({ videoUrl, thumbnail, title }) {
     const [isPlaying, setIsPlaying] = React.useState(false);
+    const [isMuted, setIsMuted] = React.useState(false);
     const videoRef = React.useRef(null);
-
-    React.useEffect(() => {
-        if (isPlaying && videoRef.current) {
-            videoRef.current.play().catch(err => console.log("Video play failed:", err));
-        }
-    }, [isPlaying]);
 
     if (!videoUrl) return null;
 
-    const getYouTubeID = (url) => {
-        if (!url) return null;
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
-        const match = url.match(regExp);
-        return (match && match[2].length === 11) ? match[2] : null;
+    const getYouTubeId = (url) => {
+        if (!url) return '';
+        if (url.length === 11) return url; // Likely just an ID
+        if (url.includes('watch?v=')) return url.split('v=')[1].split('&')[0];
+        if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split('?')[0];
+        if (url.includes('embed/')) return url.split('embed/')[1].split('?')[0];
+        return '';
     };
 
-    const isYouTube = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
+    const videoId = getYouTubeId(videoUrl);
+    const isYouTube = videoId !== '' || videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
     let embedUrl = videoUrl;
 
-    if (isYouTube) {
-        const videoId = getYouTubeID(videoUrl);
-        if (videoId) {
-            embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&enablejsapi=1`;
-        }
+    if (isYouTube && videoId) {
+        embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=${isMuted ? 1 : 0}&origin=${window.location.origin}&controls=1`;
+    } else if (!videoUrl.startsWith('http') && !videoUrl.startsWith('//') && !videoUrl.startsWith('data:')) {
+        // Prevent relative URL loading which causes 431 errors on localhost
+        return null;
     }
 
     let displayThumb = thumbnail;
     if (!displayThumb && isYouTube) {
-        const videoId = getYouTubeID(videoUrl);
-        if (videoId) {
-            displayThumb = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-        }
+        displayThumb = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
     }
 
-    if (!isPlaying) {
-        return el('div', {
-            className: 'review-video-item',
-            onClick: () => setIsPlaying(true),
-            style: { position: 'relative', cursor: 'pointer' }
-        },
+    const togglePlay = (e) => {
+        if (e) e.stopPropagation();
+        if (isYouTube) {
+            setIsPlaying(!isPlaying);
+            return;
+        }
+        if (videoRef.current) {
+            if (videoRef.current.paused) {
+                videoRef.current.play();
+                setIsPlaying(true);
+            } else {
+                videoRef.current.pause();
+                setIsPlaying(false);
+            }
+        }
+    };
+
+    const toggleMute = (e) => {
+        if (e) e.stopPropagation();
+        setIsMuted(!isMuted);
+    };
+
+    const closePlayer = (e) => {
+        if (e) e.stopPropagation();
+        setIsPlaying(false);
+    };
+
+    return el('div', {
+        className: `review-video-item ${isPlaying ? 'active-video' : ''}`,
+        onClick: !isPlaying ? () => setIsPlaying(true) : undefined,
+        style: { position: 'relative', cursor: !isPlaying ? 'pointer' : 'default' }
+    },
+        !isPlaying ? el(React.Fragment, null,
             el('img', {
                 src: displayThumb || 'https://via.placeholder.com/600x338?text=Kavithakal+Video',
                 alt: title,
                 style: { width: '100%', height: '100%', objectFit: 'cover' },
                 onError: (e) => {
-                    // Fallback if maxresdefault doesn't exist
                     if (e.target.src.includes('maxresdefault')) {
                         e.target.src = e.target.src.replace('maxresdefault', 'mqdefault');
                     }
@@ -140,45 +161,76 @@ function ReviewVideoCard({ videoUrl, thumbnail, title }) {
                     el('i', { className: 'fa-solid fa-play' })
                 )
             )
-        );
-    }
+        ) : el(React.Fragment, null,
+            isYouTube ?
+                el('iframe', {
+                    src: embedUrl,
+                    style: { width: '100%', height: '100%', border: 'none' },
+                    allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
+                    allowFullScreen: true
+                }) :
+                el('video', {
+                    ref: videoRef,
+                    src: videoUrl,
+                    poster: displayThumb,
+                    controls: false,
+                    autoPlay: true,
+                    muted: isMuted,
+                    className: 'full-video',
+                    style: { width: '100%', height: '100%', backgroundColor: '#000' }
+                }),
+            
+            // Custom Control Overlay
+            el('div', { 
+                className: 'video-custom-controls',
+                style: {
+                    position: 'absolute',
+                    bottom: '0',
+                    left: '0',
+                    right: '0',
+                    padding: '15px',
+                    background: 'linear-gradient(transparent, rgba(0,0,0,0.8))',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '15px',
+                    zIndex: 10
+                }
+            },
+                el('button', {
+                    onClick: togglePlay,
+                    className: 'video-mini-btn',
+                    style: { width: '36px', height: '36px' }
+                }, el('i', { className: isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play' })),
+                
+                el('button', {
+                    onClick: toggleMute,
+                    className: 'video-mini-btn',
+                    style: { width: '36px', height: '36px' }
+                }, el('i', { className: isMuted ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high' }))
+            ),
 
-    return el('div', { className: 'review-video-item active-video', style: { position: 'relative' } },
-        isYouTube ?
-            el('iframe', {
-                src: embedUrl,
-                style: { width: '100%', height: '100%', border: 'none' },
-                allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
-                allowFullScreen: true
-            }) :
-            el('video', {
-                ref: videoRef,
-                src: videoUrl,
-                poster: thumbnail,
-                controls: true,
-                playsInline: true,
-                style: { width: '100%', height: '100%', backgroundColor: '#000' }
-            }),
-        el('button', {
-            onClick: (e) => { e.stopPropagation(); setIsPlaying(false); },
-            className: 'close-video-btn',
-            style: {
-                position: 'absolute',
-                top: '15px',
-                right: '15px',
-                zIndex: 10,
-                background: 'rgba(0,0,0,0.6)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '50%',
-                width: '35px',
-                height: '35px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-            }
-        }, el('i', { className: 'fa-solid fa-xmark' }))
+            el('button', {
+                onClick: closePlayer,
+                className: 'close-video-btn',
+                style: {
+                    position: 'absolute',
+                    top: '15px',
+                    right: '15px',
+                    zIndex: 100,
+                    background: 'rgba(0,0,0,0.6)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '32px',
+                    height: '32px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backdropFilter: 'blur(5px)'
+                }
+            }, el('i', { className: 'fa-solid fa-xmark' }))
+        )
     );
 }
 

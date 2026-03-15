@@ -9,12 +9,14 @@
             return;
         }
 
-        const lenis = new Lenis({
-            duration: 1.05,
+const lenis = new Lenis({
+            duration: 1.2,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
             smoothWheel: true,
             smoothTouch: true,
             wheelMultiplier: 1,
-            touchMultiplier: 1.2,
+            touchMultiplier: 1.5,
+            lerp: 0.1
         });
 
         function raf(time) {
@@ -24,12 +26,23 @@
 
         requestAnimationFrame(raf);
 
-        // Update ScrollTrigger on Lenis scroll
-        if (typeof ScrollTrigger !== 'undefined') {
-            lenis.on('scroll', ScrollTrigger.update);
-        }
+        // Update ScrollTrigger & handle pointer-events class
+        lenis.on('scroll', (e) => {
+            if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.update();
+            
+            // Add/Remove class for CSS pointer-event handling
+            if (e.velocity !== 0) {
+                document.documentElement.classList.add('lenis-scrolling');
+            } else {
+                document.documentElement.classList.remove('lenis-scrolling');
+            }
+        });
 
-        // Expose globally if needed
+        // Ensure class is removed when scrolling stops
+        lenis.on('scrollEnd', () => {
+            document.documentElement.classList.remove('lenis-scrolling');
+        });
+
         window.lenis = lenis;
 
         console.log('Lenis initialized: Apple free-flow scroll active');

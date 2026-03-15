@@ -2,55 +2,74 @@
 
 function MontageVideoCard({ videoUrl, clientName, thumbnail }) {
     const [isPlaying, setIsPlaying] = React.useState(false);
+    const [isMuted, setIsMuted] = React.useState(false);
     const videoRef = React.useRef(null);
-
-    React.useEffect(() => {
-        if (isPlaying && videoRef.current) {
-            videoRef.current.play().catch(err => console.log("Video play failed:", err));
-        }
-    }, [isPlaying]);
 
     // Safety check for empty URLs
     if (!videoUrl) return null;
 
-    const getYouTubeID = (url) => {
-        if (!url) return null;
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
-        const match = url.match(regExp);
-        return (match && match[2].length === 11) ? match[2] : null;
+    const getYouTubeId = (url) => {
+        if (!url) return '';
+        if (url.length === 11) return url;
+        if (url.includes('watch?v=')) return url.split('v=')[1].split('&')[0];
+        if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split('?')[0];
+        if (url.includes('embed/')) return url.split('embed/')[1].split('?')[0];
+        return '';
     };
 
-    const isYouTube = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
+    const videoId = getYouTubeId(videoUrl);
+    const isYouTube = videoId !== '' || videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
     let embedUrl = videoUrl;
 
-    if (isYouTube) {
-        const videoId = getYouTubeID(videoUrl);
-        if (videoId) {
-            embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&enablejsapi=1`;
-        }
+    if (isYouTube && videoId) {
+        embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=${isMuted ? 1 : 0}&origin=${window.location.origin}&controls=1`;
+    } else if (!videoUrl.startsWith('http') && !videoUrl.startsWith('//') && !videoUrl.startsWith('data:')) {
+        return null;
     }
 
-    if (!isPlaying) {
-        return el('div', {
-            className: 'montage-card',
-            onClick: () => setIsPlaying(true)
-        },
-            el('div', { className: 'montage-thumb-container' },
-                el('img', { src: thumbnail || 'https://via.placeholder.com/600x338?text=Kavithakal+Studio', alt: clientName, className: 'montage-thumb' }),
-                el('div', { className: 'montage-overlay' },
-                    el(Reveal, { animation: 'fade-up' },
-                        el('h3', null, clientName)
-                    ),
-                    el('div', { className: 'play-btn-circle' },
-                        el('i', { className: 'fa-solid fa-play' })
-                    )
+    const togglePlay = (e) => {
+        if (e) e.stopPropagation();
+        if (isYouTube) {
+            setIsPlaying(!isPlaying);
+            return;
+        }
+        if (videoRef.current) {
+            if (videoRef.current.paused) {
+                videoRef.current.play();
+                setIsPlaying(true);
+            } else {
+                videoRef.current.pause();
+                setIsPlaying(false);
+            }
+        }
+    };
+
+    const toggleMute = (e) => {
+        if (e) e.stopPropagation();
+        setIsMuted(!isMuted);
+    };
+
+    const closePlayer = (e) => {
+        if (e) e.stopPropagation();
+        setIsPlaying(false);
+    };
+
+    return el('div', {
+        className: `montage-card ${isPlaying ? 'active-video' : ''}`,
+        onClick: !isPlaying ? () => setIsPlaying(true) : undefined,
+        style: { cursor: !isPlaying ? 'pointer' : 'default' }
+    },
+        !isPlaying ? el('div', { className: 'montage-thumb-container' },
+            el('img', { src: thumbnail || 'https://via.placeholder.com/600x338?text=Kavithakal+Studio', alt: clientName, className: 'montage-thumb' }),
+            el('div', { className: 'montage-overlay' },
+                el(Reveal, { animation: 'fade-up' },
+                    el('h3', null, clientName)
+                ),
+                el('div', { className: 'play-btn-circle' },
+                    el('i', { className: 'fa-solid fa-play' })
                 )
             )
-        );
-    }
-
-    return el('div', { className: 'montage-card active-video' },
-        el('div', { className: 'montage-video-container', style: { position: 'relative', width: '100%', aspectRatio: '16/9' } },
+        ) : el('div', { className: 'montage-video-container', style: { position: 'relative', width: '100%', height: '100%' } },
             isYouTube ?
                 el('iframe', {
                     src: embedUrl,
@@ -63,27 +82,62 @@ function MontageVideoCard({ videoUrl, clientName, thumbnail }) {
                     src: videoUrl,
                     poster: thumbnail,
                     className: 'full-video',
-                    controls: true,
-                    playsInline: true,
+                    controls: false, // Disable native
+                    autoPlay: true,
+                    muted: isMuted,
                     style: { width: '100%', height: '100%', backgroundColor: '#000' }
                 }),
+            
+            // Custom Control Overlay
+            el('div', { 
+                className: 'video-custom-controls',
+                style: {
+                    position: 'absolute',
+                    bottom: '0',
+                    left: '0',
+                    right: '0',
+                    padding: '12px',
+                    background: 'linear-gradient(transparent, rgba(0,0,0,0.8))',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    zIndex: 10
+                }
+            },
+                el('button', {
+                    onClick: togglePlay,
+                    className: 'video-mini-btn',
+                    style: { width: '32px', height: '32px' }
+                }, el('i', { className: isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play' })),
+                
+                el('button', {
+                    onClick: toggleMute,
+                    className: 'video-mini-btn',
+                    style: { width: '32px', height: '32px' }
+                }, el('i', { className: isMuted ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high' }))
+            ),
+
             el('button', {
-                onClick: (e) => { e.stopPropagation(); setIsPlaying(false); },
+                onClick: closePlayer,
                 className: 'close-video-btn',
                 style: {
                     position: 'absolute',
                     top: '10px',
                     right: '10px',
-                    zIndex: 10,
+                    zIndex: 100,
                     background: 'rgba(0,0,0,0.5)',
-                    color: '#white',
+                    color: 'white',
                     border: 'none',
                     borderRadius: '50%',
                     width: '30px',
                     height: '30px',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backdropFilter: 'blur(5px)'
                 }
-            }, el('i', { className: 'fa-solid fa-xmark', style: { color: 'white' } }))
+            }, el('i', { className: 'fa-solid fa-xmark' }))
         )
     );
 }
