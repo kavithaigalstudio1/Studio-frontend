@@ -151,11 +151,11 @@ const newContent = `
     }
 
     .review-video-item {
-        flex: 0 0 1000px !important;
-        width: 1000px !important;
-        height: 600px !important;
+        flex: 0 0 550px !important;
+        width: 550px !important;
+        height: 450px !important;
         aspect-ratio: auto;
-        border-radius: 60px;
+        border-radius: 40px;
         box-shadow: 0 30px 80px rgba(0,0,0,0.18);
         scroll-snap-align: center;
     }
@@ -172,10 +172,16 @@ const newContent = `
     }
 
     .review-card {
-        min-width: 450px;
+        flex: 0 0 550px !important;
+        width: 550px !important;
+        height: 450px !important;
+        min-width: 550px;
         padding: 3rem;
         margin-right: 2rem;
         border-radius: 40px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
 
     .latest-reviews-display h2 {

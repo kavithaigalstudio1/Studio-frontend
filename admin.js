@@ -37,6 +37,31 @@ function AdminPage() {
     };
 
     const [loginError, setLoginError] = React.useState('');
+    const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+
+    // Global Stats State for instant updates
+    const [stats, setStats] = React.useState({
+        galleryImages: 0,
+        galleryVideos: 0,
+        montages: 0,
+        reviewTexts: 0,
+        reviewVideos: 0,
+        portfolioImages: 0,
+        innerPageImages: 0
+    });
+
+    const fetchStats = React.useCallback(() => {
+        fetch(`${window.API_URL}/api/admin/stats`)
+            .then(res => res.json())
+            .then(data => setStats(data))
+            .catch(err => console.error('Error fetching dashboard stats:', err));
+    }, []);
+
+    React.useEffect(() => {
+        if (isLoggedIn) {
+            fetchStats();
+        }
+    }, [isLoggedIn, fetchStats]);
 
     if (!isLoggedIn) {
         return el('div', { className: 'admin-login-page' },
@@ -71,57 +96,95 @@ function AdminPage() {
         );
     }
 
-    return el('div', { className: 'admin-dashboard-layout' },
+    return el('div', { className: `admin-dashboard-layout ${isSidebarOpen ? 'sidebar-open' : ''}` },
+        // Mobile Sidebar Overlay
+        isSidebarOpen && el('div', { className: 'sidebar-overlay', onClick: () => setIsSidebarOpen(false) }),
+
         el('aside', { className: 'admin-sidebar' },
             el('div', { className: 'sidebar-header' },
                 el('img', { src: './public/logo copy.png', alt: 'Logo', className: 'admin-sidebar-logo' }),
-                el('h2', null, 'Kavithaigal ', el('span', null, 'Admin'))
+                el('h2', null, 'Kavithaigal ', el('span', null, 'Admin')),
+                // Close button for mobile
+                el('button', { className: 'sidebar-close-btn', onClick: () => setIsSidebarOpen(false) },
+                    el('i', { className: 'fa-solid fa-xmark' })
+                )
             ),
             el('nav', { className: 'sidebar-nav' },
-                el('button', { className: activeTab === 'dashboard' ? 'active' : '', onClick: () => setActiveTab('dashboard') },
-                    el('i', { className: 'fa-solid fa-gauge' }), ' Dashboard'),
-                el('button', { className: activeTab === 'gallery' ? 'active' : '', onClick: () => setActiveTab('gallery') },
-                    el('i', { className: 'fa-solid fa-images' }), ' Gallery'),
-                el('button', { className: activeTab === 'portfolio' ? 'active' : '', onClick: () => setActiveTab('portfolio') },
-                    el('i', { className: 'fa-solid fa-briefcase' }), ' Portfolio'),
-                el('button', { className: activeTab === 'montages' ? 'active' : '', onClick: () => setActiveTab('montages') },
-                    el('i', { className: 'fa-solid fa-film' }), ' Montages'),
-                el('button', { className: activeTab === 'reviews' ? 'active' : '', onClick: () => setActiveTab('reviews') },
-                    el('i', { className: 'fa-solid fa-star' }), ' Reviews'),
-                el('button', { className: activeTab === 'contact' ? 'active' : '', onClick: () => setActiveTab('contact') },
-                    el('i', { className: 'fa-solid fa-address-book' }), ' Contact Info')
+                el('button', {
+                    className: activeTab === 'dashboard' ? 'active' : '',
+                    onClick: () => { setActiveTab('dashboard'); setIsSidebarOpen(false); }
+                }, el('i', { className: 'fa-solid fa-house-chimney-window' }), el('span', null, 'Dashboard')),
+
+                el('button', {
+                    className: activeTab === 'gallery' ? 'active' : '',
+                    onClick: () => { setActiveTab('gallery'); setIsSidebarOpen(false); }
+                }, el('i', { className: 'fa-solid fa-photo-film' }), el('span', null, 'Gallery')),
+
+                el('button', {
+                    className: activeTab === 'portfolio' ? 'active' : '',
+                    onClick: () => { setActiveTab('portfolio'); setIsSidebarOpen(false); }
+                }, el('i', { className: 'fa-solid fa-crown' }), el('span', null, 'Portfolio')),
+
+                el('button', {
+                    className: activeTab === 'montages' ? 'active' : '',
+                    onClick: () => { setActiveTab('montages'); setIsSidebarOpen(false); }
+                }, el('i', { className: 'fa-solid fa-clapperboard' }), el('span', null, 'Montages')),
+
+                el('button', {
+                    className: activeTab === 'reviews' ? 'active' : '',
+                    onClick: () => { setActiveTab('reviews'); setIsSidebarOpen(false); }
+                }, el('i', { className: 'fa-solid fa-comment-dots' }), el('span', null, 'Reviews')),
+
+                el('button', {
+                    className: activeTab === 'contact' ? 'active' : '',
+                    onClick: () => { setActiveTab('contact'); setIsSidebarOpen(false); }
+                }, el('i', { className: 'fa-solid fa-id-card' }), el('span', null, 'Contact Info')),
+
+                el('button', {
+                    className: activeTab === 'innerpages' ? 'active' : '',
+                    onClick: () => { setActiveTab('innerpages'); setIsSidebarOpen(false); }
+                }, el('i', { className: 'fa-solid fa-images' }), el('span', null, 'Inner Pages'))
             ),
             el('div', { className: 'sidebar-footer' },
-                el('button', { onClick: handleLogout }, el('i', { className: 'fa-solid fa-right-from-bracket' }), ' Logout')
+                el('button', { onClick: handleLogout }, el('i', { className: 'fa-solid fa-power-off' }), el('span', null, 'Logout'))
             )
         ),
         el('main', { className: 'admin-main' },
             el('header', { className: 'admin-header' },
-                el('h1', null, activeTab.charAt(0).toUpperCase() + activeTab.slice(1)),
+                el('div', { style: { display: 'flex', alignItems: 'center', gap: '1rem' } },
+                    el('button', { className: 'admin-menu-toggle', onClick: () => setIsSidebarOpen(true) },
+                        el('i', { className: 'fa-solid fa-bars-staggered' })
+                    ),
+                    el('h1', null, activeTab.charAt(0).toUpperCase() + activeTab.slice(1))
+                ),
                 el('div', { className: 'admin-profile' },
-                    el('span', null, 'Welcome, Muhilan Prabhakaran'),
+                    el('div', { className: 'admin-profile-info' },
+                        el('span', { className: 'admin-welcome' }, 'Welcome, Muhilan Prabhakaran'),
+                        el('span', { className: 'admin-tag' }, 'ADMIN')
+                    ),
                     el('img', { src: './public/admin.png', alt: 'Admin' })
                 )
             ),
             el('div', { className: 'admin-content' },
-                activeTab === 'dashboard' && el(AdminDashboardOverview, { setActiveTab }),
+                activeTab === 'dashboard' && el(AdminDashboardOverview, { setActiveTab, stats }),
                 activeTab === 'gallery' && el(React.Fragment, null,
-                    el(AdminGalleryManager),
-                    el(AdminGalleryVideosManager)
+                    el(AdminGalleryManager, { onUpdate: fetchStats }),
+                    el(AdminGalleryVideosManager, { onUpdate: fetchStats })
                 ),
-                activeTab === 'portfolio' && el(AdminPortfolioManager),
-                activeTab === 'montages' && el(AdminMontagesManager),
+                activeTab === 'portfolio' && el(AdminPortfolioManager, { onUpdate: fetchStats }),
+                activeTab === 'montages' && el(AdminMontagesManager, { onUpdate: fetchStats }),
                 activeTab === 'reviews' && el(React.Fragment, null,
-                    el(AdminReviewVideoManager),
-                    el(AdminReviewManager)
+                    el(AdminReviewVideoManager, { onUpdate: fetchStats }),
+                    el(AdminReviewManager, { onUpdate: fetchStats })
                 ),
-                activeTab === 'contact' && el(AdminContactManager)
+                activeTab === 'contact' && el(AdminContactManager),
+                activeTab === 'innerpages' && el(AdminInnerPagesManager, { onUpdate: fetchStats })
             )
         )
     );
 }
 
-function AdminReviewVideoManager() {
+function AdminReviewVideoManager({ onUpdate }) {
     const [videos, setVideos] = React.useState([]);
     const [newUrl, setNewUrl] = React.useState('');
     const MAX_SIZE = 16 * 1024 * 1024; // 16MB (MongoDB Document Limit)
@@ -139,7 +202,9 @@ function AdminReviewVideoManager() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ videos: newList })
-        }).catch(err => console.error('Error saving review videos:', err));
+        })
+            .then(() => onUpdate && onUpdate())
+            .catch(err => console.error('Error saving review videos:', err));
     };
 
     const handleFileChange = (e) => {
@@ -216,7 +281,7 @@ function AdminReviewVideoManager() {
     );
 }
 
-function AdminReviewManager() {
+function AdminReviewManager({ onUpdate }) {
     const [reviews, setReviews] = React.useState([]);
 
     React.useEffect(() => {
@@ -229,7 +294,10 @@ function AdminReviewManager() {
     const deleteReview = (id) => {
         if (!confirm('Are you sure you want to delete this review?')) return;
         fetch(`${window.API_URL}/api/reviews/${id}`, { method: 'DELETE' })
-            .then(() => setReviews(reviews.filter(r => r._id !== id)))
+            .then(() => {
+                setReviews(reviews.filter(r => r._id !== id));
+                onUpdate && onUpdate();
+            })
             .catch(err => console.error('Error deleting review:', err));
     };
 
@@ -260,84 +328,162 @@ function AdminReviewManager() {
     );
 }
 
-// Helper for file upload to base64
-const handleFileUpload = (file, callback) => {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-        callback(reader.result);
-    };
-    reader.readAsDataURL(file);
+// Helper for image compression before upload
+const compressImage = (file, maxWidth = 1920, quality = 0.8) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                // Only resize if bigger than maxWidth
+                if (width > maxWidth || height > maxWidth) {
+                    if (width > height) {
+                        height *= maxWidth / width;
+                        width = maxWidth;
+                    } else {
+                        width *= maxWidth / height;
+                        height = maxWidth;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Return high-efficiency JPEG base64 (roughly 10x smaller)
+                resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.onerror = (err) => reject(err);
+        };
+        reader.onerror = (err) => reject(err);
+    });
 };
 
-function AdminDashboardOverview({ setActiveTab }) {
-    const [stats, setStats] = React.useState({
-        galleryImages: 0,
-        galleryVideos: 0,
-        montages: 0,
-        reviewTexts: 0,
-        reviewVideos: 0,
-        portfolioImages: 0
-    });
+function AdminDropdown({ options, value, onChange, label }) {
+    const [isOpen, setIsOpen] = React.useState(false);
+    const dropdownRef = React.useRef(null);
 
     React.useEffect(() => {
-        fetch(`${window.API_URL}/api/admin/stats`)
-            .then(res => res.json())
-            .then(data => setStats(data))
-            .catch(err => console.error('Error fetching dashboard stats:', err));
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    const selectedOption = options.find(opt => opt.value === value) || options[0];
+
+    return el('div', { className: 'admin-dropdown-container', ref: dropdownRef },
+        label && el('label', { className: 'admin-dropdown-label' }, label),
+        el('div', {
+            className: `admin-dropdown-trigger ${isOpen ? 'active' : ''}`,
+            onClick: () => setIsOpen(!isOpen)
+        },
+            el('span', null, selectedOption ? selectedOption.label : 'Select...'),
+            el('i', { className: `fa-solid fa-chevron-down ${isOpen ? 'rotate' : ''}` })
+        ),
+        el('div', { className: `admin-dropdown-menu ${isOpen ? 'show' : ''}` },
+            options.map((opt, idx) => el('div', {
+                key: idx,
+                className: `admin-dropdown-item ${value === opt.value ? 'selected' : ''}`,
+                onClick: () => {
+                    onChange(opt.value);
+                    setIsOpen(false);
+                }
+            }, opt.label))
+        )
+    );
+}
+
+// Refined single-file handler with compression
+const handleFileUpload = (file, callback) => {
+    if (!file) return;
+    compressImage(file)
+        .then(base64 => callback(base64))
+        .catch(err => {
+            console.error('Compression failed:', err);
+            // Fallback to direct read if compression fails
+            const reader = new FileReader();
+            reader.onload = () => callback(reader.result);
+            reader.readAsDataURL(file);
+        });
+};
+
+// Multi-file helper with parallel compression
+const filesToBase64 = (files) => {
+    return Promise.all(Array.from(files).map(file => compressImage(file)));
+};
+
+function AdminDashboardOverview({ setActiveTab, stats }) {
     return el('div', { className: 'dashboard-overview' },
         el('div', { className: 'stats-grid' },
             el('div', { className: 'stat-card', onClick: () => setActiveTab('gallery') },
-                el('div', { className: 'stat-icon', style: { backgroundColor: '#4cc9f0' } }, el('i', { className: 'fa-solid fa-images' })),
+                el('div', { className: 'stat-icon', style: { background: 'linear-gradient(135deg, #00f2fe 0%, #4facfe 100%)' } }, el('i', { className: 'fa-solid fa-photo-film' })),
                 el('div', { className: 'stat-info' },
                     el('h3', null, 'Gallery'),
                     el('p', null, `${stats.galleryImages} Images`),
-                    el('p', { style: { fontSize: '0.8rem', opacity: 0.8 } }, `${stats.galleryVideos} Videos`)
+                    el('p', { style: { fontSize: '0.8rem', opacity: 0.8, fontWeight: 400 } }, `${stats.galleryVideos || 0} Videos`)
                 )
             ),
             el('div', { className: 'stat-card', onClick: () => setActiveTab('portfolio') },
-                el('div', { className: 'stat-icon', style: { backgroundColor: '#4361ee' } }, el('i', { className: 'fa-solid fa-briefcase' })),
+                el('div', { className: 'stat-icon', style: { background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' } }, el('i', { className: 'fa-solid fa-crown' })),
                 el('div', { className: 'stat-info' },
                     el('h3', null, 'Portfolio'),
                     el('p', null, `${stats.portfolioImages} Images`),
-                    el('p', { style: { fontSize: '0.8rem', opacity: 0.8 } }, 'All Categories')
+                    el('p', { style: { fontSize: '0.8rem', opacity: 0.8, fontWeight: 400 } }, 'All Categories')
                 )
             ),
             el('div', { className: 'stat-card', onClick: () => setActiveTab('montages') },
-                el('div', { className: 'stat-icon', style: { backgroundColor: '#f72585' } }, el('i', { className: 'fa-solid fa-film' })),
+                el('div', { className: 'stat-icon', style: { background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' } }, el('i', { className: 'fa-solid fa-clapperboard' })),
                 el('div', { className: 'stat-info' },
                     el('h3', null, 'Montages'),
-                    el('p', null, `${stats.montages} Videos`)
+                    el('p', null, `${stats.montages} Videos`),
+                    el('p', { style: { fontSize: '0.8rem', opacity: 0.8, fontWeight: 400 } }, 'Client Showcases')
                 )
             ),
             el('div', { className: 'stat-card', onClick: () => setActiveTab('reviews') },
-                el('div', { className: 'stat-icon', style: { backgroundColor: '#7209b7' } }, el('i', { className: 'fa-solid fa-star' })),
+                el('div', { className: 'stat-icon', style: { background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' } }, el('i', { className: 'fa-solid fa-comment-dots' })),
                 el('div', { className: 'stat-info' },
                     el('h3', null, 'Reviews'),
-                    el('p', null, `${stats.reviewTexts} Text Reviews`),
-                    el('p', { style: { fontSize: '0.8rem', opacity: 0.8 } }, `${stats.reviewVideos} Showcase Videos`)
+                    el('p', null, `${stats.reviewTexts} Reviews`),
+                    el('p', { style: { fontSize: '0.8rem', opacity: 0.8, fontWeight: 400 } }, `${stats.reviewVideos || 0} Showcase Videos`)
+                )
+            ),
+            el('div', { className: 'stat-card', onClick: () => setActiveTab('innerpages') },
+                el('div', { className: 'stat-icon', style: { background: 'linear-gradient(135deg, #f7971e 0%, #ffd200 100%)' } }, el('i', { className: 'fa-solid fa-images' })),
+                el('div', { className: 'stat-info' },
+                    el('h3', null, 'Inner Pages'),
+                    el('p', null, `${stats.innerPageImages || 0} Images`),
+                    el('p', { style: { fontSize: '0.8rem', opacity: 0.8, fontWeight: 400 } }, '4 Wedding Stories')
                 )
             )
         ),
         el('div', { className: 'welcome-card' },
             el('h2', null, 'Studio Administration'),
-            el('p', null, 'The system now remembers your session. If you refresh the page, you will stay on the same section. Use the selectors below to upload images or videos.')
+            el('p', null, 'Welcome to your premium dashboard. Manage your gallery, portfolio, and client reviews with ease. Your session is synchronized across refreshes.')
         )
     );
 }
 
-function AdminGalleryManager() {
-    const defaultImages = ['./public/b1.jpg', './public/b2.jpg', './public/b3.jpg', './public/b4.jpg', './public/b5.jpg', './public/b6.jpg'];
-    const [images, setImages] = React.useState(defaultImages);
+function AdminGalleryManager({ onUpdate }) {
+    const [images, setImages] = React.useState([]);
     const [newImageUrl, setNewImageUrl] = React.useState('');
+    const [selectedIndices, setSelectedIndices] = React.useState([]);
 
     React.useEffect(() => {
         fetch(`${window.API_URL}/api/gallery`)
             .then(res => res.json())
             .then(data => {
-                if (Array.isArray(data) && data.length > 0) {
+                if (Array.isArray(data)) {
                     setImages(data);
                 }
             })
@@ -346,20 +492,61 @@ function AdminGalleryManager() {
 
     const saveChanges = (newList) => {
         setImages(newList);
+        setSelectedIndices([]);
+
+        // Clear frontend caches to ensure immediate update on Gallery page
+        window.globalAssetCache.gallery = newList;
+
         fetch(`${window.API_URL}/api/gallery`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ images: newList })
-        }).catch(err => console.error('Error saving gallery:', err));
+        })
+            .then(() => {
+                onUpdate && onUpdate();
+                console.log('Gallery synchronized with MongoDB');
+            })
+            .catch(err => console.error('Error saving gallery:', err));
     };
 
     const addImage = () => {
         if (!newImageUrl) return;
-        saveChanges([...images, newImageUrl]);
+        if (images.length >= 50) {
+            alert('Maximum 50 images allowed in Gallery!');
+            return;
+        }
+        saveChanges([newImageUrl, ...images]);
         setNewImageUrl('');
     };
 
+    const toggleSelect = (idx) => {
+        setSelectedIndices(prev =>
+            prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]
+        );
+    };
+
+    const deleteSelected = () => {
+        if (!selectedIndices.length) return;
+        if (!confirm(`Delete ${selectedIndices.length} selected images?`)) return;
+        const newList = images.filter((_, idx) => !selectedIndices.includes(idx));
+        saveChanges(newList);
+    };
+
     return el('div', { className: 'admin-section' },
+        el('div', { className: 'welcome-card', style: { marginBottom: '2rem' } },
+            el('h2', null, 'Manage Gallery Images (Max 50)'),
+            el('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                el('p', { style: { margin: 0 } }, `${images.length}/50 images uploaded. ${50 - images.length} slots remaining.`),
+                images.length > 0 && el('button', {
+                    className: 'btn-secondary',
+                    style: { padding: '5px 12px', fontSize: '0.8rem' },
+                    onClick: () => {
+                        if (selectedIndices.length === images.length) setSelectedIndices([]);
+                        else setSelectedIndices(images.map((_, i) => i));
+                    }
+                }, selectedIndices.length === images.length ? 'Deselect All' : 'Select All')
+            )
+        ),
         el('div', { className: 'upload-controls' },
             el('div', { className: 'control-group' },
                 el('h4', null, 'Option 1: Add via URL'),
@@ -369,26 +556,60 @@ function AdminGalleryManager() {
                 )
             ),
             el('div', { className: 'control-group' },
-                el('h4', null, 'Option 2: Upload File'),
+                el('h4', null, 'Option 2: Upload Files (Select 1 to 5)'),
                 el('input', {
                     type: 'file',
                     accept: 'image/*',
-                    onChange: (e) => handleFileUpload(e.target.files[0], (base64) => saveChanges([...images, base64]))
+                    multiple: true,
+                    onChange: (e) => {
+                        const totalRemaining = 50 - images.length;
+                        if (totalRemaining <= 0) {
+                            alert('Gallery is full (Max 50)! Delete some to add more.');
+                            e.target.value = "";
+                            return;
+                        }
+
+                        // Limit batch to 5 and also check remaining capacity
+                        const batchLimit = Math.min(5, totalRemaining);
+                        const files = Array.from(e.target.files).slice(0, batchLimit);
+
+                        if (e.target.files.length > batchLimit) {
+                            alert(`You can add up to 5 images at once. Adding the first ${batchLimit} selected files.`);
+                        }
+
+                        filesToBase64(files).then(base64s => {
+                            saveChanges([...base64s, ...images]);
+                            e.target.value = "";
+                        });
+                    }
                 })
+            ),
+            selectedIndices.length > 0 && el('div', { className: 'selection-actions' },
+                el('span', { className: 'selection-info' },
+                    el('i', { className: 'fa-solid fa-check-double', style: { marginRight: '8px' } }),
+                    `${selectedIndices.length} items selected`
+                ),
+                el('button', { className: 'btn-delete bulk-delete', onClick: deleteSelected },
+                    el('i', { className: 'fa-solid fa-trash-can' }),
+                    `Delete Selected`
+                )
             )
         ),
         el('div', { className: 'admin-grid' },
             images.map((src, idx) =>
-                el('div', { key: idx, className: 'admin-item-card' },
+                el('div', { key: idx, className: `admin-item-card ${selectedIndices.includes(idx) ? 'selected' : ''}`, onClick: () => toggleSelect(idx) },
+                    el('div', { className: 'selection-checkbox' },
+                        el('i', { className: selectedIndices.includes(idx) ? 'fa-solid fa-square-check' : 'fa-regular fa-square' })
+                    ),
                     el('img', { src: src, alt: '' }),
-                    el('button', { className: 'btn-delete', onClick: () => saveChanges(images.filter((_, i) => i !== idx)) }, el('i', { className: 'fa-solid fa-trash' }))
+                    el('button', { className: 'btn-delete single-delete', onClick: (e) => { e.stopPropagation(); saveChanges(images.filter((_, i) => i !== idx)); } }, el('i', { className: 'fa-solid fa-trash' }))
                 )
             )
         )
     );
 }
 
-function AdminGalleryVideosManager() {
+function AdminGalleryVideosManager({ onUpdate }) {
     const [films, setFilms] = React.useState([]);
     const [newFilm, setNewFilm] = React.useState({ title: '', url: '', thumb: '' });
 
@@ -396,7 +617,7 @@ function AdminGalleryVideosManager() {
         fetch(`${window.API_URL}/api/gallery-films`)
             .then(res => res.json())
             .then(data => {
-                if (Array.isArray(data) && data.length > 0) setFilms(data);
+                if (Array.isArray(data)) setFilms(data);
             })
             .catch(err => console.error('Error fetching gallery films:', err));
     }, []);
@@ -407,7 +628,9 @@ function AdminGalleryVideosManager() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ films: newList })
-        }).catch(err => console.error('Error saving gallery films:', err));
+        })
+            .then(() => onUpdate && onUpdate())
+            .catch(err => console.error('Error saving gallery films:', err));
     };
 
     const addFilm = () => {
@@ -448,7 +671,7 @@ function AdminGalleryVideosManager() {
     );
 }
 
-function AdminPortfolioManager() {
+function AdminPortfolioManager({ onUpdate }) {
     const initialCategories = [
         { title: 'Portraits', image: './public/b6.jpg' },
         { title: 'Pre Weddings', image: './public/b5.jpg' },
@@ -458,17 +681,14 @@ function AdminPortfolioManager() {
         { title: 'Engagement', image: './public/b1.jpg' }
     ];
 
-    const [categories, setCategories] = React.useState(() => {
-        const saved = localStorage.getItem('ks_portfolio_data');
-        return saved ? JSON.parse(saved) : initialCategories;
-    });
+    const [categories, setCategories] = React.useState(initialCategories);
 
     const [selectedCat, setSelectedCat] = React.useState(() => {
         return localStorage.getItem('ks_admin_portfolio_selected_cat') || categories[0]?.title || '';
     });
 
-    const defaultPortfolio = ['./public/b6.jpg', './public/b5.jpg', './public/b4.jpg', './public/b3.jpg', './public/b2.jpg', './public/b1.jpg'];
-    const [catImages, setCatImages] = React.useState(defaultPortfolio);
+    const [catImages, setCatImages] = React.useState([]);
+    const [selectedIndices, setSelectedIndices] = React.useState([]);
 
     React.useEffect(() => {
         if (selectedCat) {
@@ -476,82 +696,143 @@ function AdminPortfolioManager() {
             fetch(`${window.API_URL}/api/portfolio/${encodeURIComponent(selectedCat)}`)
                 .then(res => res.json())
                 .then(data => {
-                    if (Array.isArray(data) && data.length > 0) {
+                    if (Array.isArray(data)) {
                         setCatImages(data);
-                    } else {
-                        setCatImages(defaultPortfolio);
+                        setSelectedIndices([]);
                     }
                 })
-                .catch(err => { console.error('Error fetching portfolio:', err); setCatImages(defaultPortfolio); });
+                .catch(err => {
+                    console.error('Error fetching portfolio:', err);
+                    setCatImages([]); // Default to empty on error
+                });
         }
     }, [selectedCat]);
 
     const saveCatImages = (newList) => {
+        if (newList.length > 50) {
+            alert('Maximum 50 images allowed per category!');
+            return;
+        }
         setCatImages(newList);
+        setSelectedIndices([]);
+
+        // Update selective cache for this category
+        if (!window.globalAssetCache.portfolio) window.globalAssetCache.portfolio = {};
+        window.globalAssetCache.portfolio[selectedCat] = newList;
+
         fetch(`${window.API_URL}/api/portfolio/${encodeURIComponent(selectedCat)}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ images: newList })
         })
             .then(res => {
-                if (!res.ok) throw new Error('Update failed');
-                alert(`${selectedCat} updated successfully!`);
+                if (!res.ok) throw new Error(res.statusText || 'Update failed');
+                onUpdate && onUpdate();
+                console.log(`Portfolio: ${selectedCat} synchronized with MongoDB`);
             })
             .catch(err => {
                 console.error('Error saving portfolio:', err);
-                alert('Large images might fail to save to MongoDB (16MB limit). Try smaller files.');
+                alert(`Error: ${err.message}. If uploading images, ensure they aren't extremely large (total payload under 16MB).`);
             });
     };
 
+    const toggleSelect = (idx) => {
+        setSelectedIndices(prev =>
+            prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]
+        );
+    };
+
+    const deleteSelected = () => {
+        if (!selectedIndices.length) return;
+        if (!confirm(`Delete ${selectedIndices.length} selected images from ${selectedCat}?`)) return;
+        const newList = catImages.filter((_, idx) => !selectedIndices.includes(idx));
+        saveCatImages(newList);
+    };
+
     return el('div', { className: 'admin-section' },
+        el('div', { className: 'welcome-card', style: { marginBottom: '2rem' } },
+            el('h2', null, 'Portfolio Category Content (Max 50)'),
+            el('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                el('p', { style: { margin: 0 } }, selectedCat ? `${catImages.length}/50 images in "${selectedCat}". ${50 - catImages.length} slots remaining.` : 'Please select a category below.'),
+                selectedCat && catImages.length > 0 && el('button', {
+                    className: 'btn-secondary',
+                    style: { padding: '5px 12px', fontSize: '0.8rem' },
+                    onClick: () => {
+                        if (selectedIndices.length === catImages.length) setSelectedIndices([]);
+                        else setSelectedIndices(catImages.map((_, i) => i));
+                    }
+                }, selectedIndices.length === catImages.length ? 'Deselect All' : 'Select All')
+            )
+        ),
         el('div', { className: 'admin-modal-form' },
-            el('h3', null, 'Manage Portfolio Content'),
-            el('div', { className: 'input-group' },
-                el('label', null, 'Select Category (Dropbox)'),
-                el('select', {
-                    value: selectedCat,
-                    onChange: (e) => setSelectedCat(e.target.value),
-                    className: 'admin-select'
-                },
-                    categories.map((cat, idx) => el('option', { key: idx, value: cat.title }, cat.title))
-                )
-            ),
-            selectedCat && el('div', { className: 'upload-controls' },
+            el('h3', null, 'Select & Add Portfolio Content'),
+            el(AdminDropdown, {
+                label: 'Choose Category',
+                value: selectedCat,
+                options: categories.map(cat => ({ label: cat.title, value: cat.title })),
+                onChange: (val) => setSelectedCat(val)
+            }),
+            selectedCat && el('div', { className: 'upload-controls', style: { marginTop: '1.5rem', background: 'rgba(255,255,255,0.03)' } },
                 el('div', { className: 'control-group' },
-                    el('h4', null, `Upload Image to "${selectedCat}"`),
+                    el('h4', null, `Upload Images to "${selectedCat}" (Select 1 to 5)`),
                     el('input', {
                         type: 'file',
                         accept: 'image/*',
-                        onChange: (e) => handleFileUpload(e.target.files[0], (base64) => saveCatImages([...catImages, base64]))
+                        multiple: true,
+                        onChange: (e) => {
+                            const totalRemaining = 50 - catImages.length;
+                            if (totalRemaining <= 0) {
+                                alert('This category is full (Max 50)!');
+                                e.target.value = "";
+                                return;
+                            }
+                            const batchLimit = Math.min(5, totalRemaining);
+                            const files = Array.from(e.target.files).slice(0, batchLimit);
+                            if (e.target.files.length > batchLimit) {
+                                alert(`You can add up to 5 images at once. Adding the first ${batchLimit} selected files.`);
+                            }
+                            filesToBase64(files).then(base64s => {
+                                saveCatImages([...base64s, ...catImages]);
+                                e.target.value = "";
+                            });
+                        }
                     })
-                )
+                ),
+            )
+        ),
+        selectedIndices.length > 0 && el('div', { className: 'selection-actions' },
+            el('span', { className: 'selection-info' },
+                el('i', { className: 'fa-solid fa-check-double', style: { marginRight: '8px' } }),
+                `${selectedIndices.length} items selected from ${selectedCat}`
+            ),
+            el('button', { className: 'btn-delete bulk-delete', onClick: deleteSelected },
+                el('i', { className: 'fa-solid fa-trash-can' }),
+                `Delete Selected`
             )
         ),
         selectedCat && el('div', { className: 'admin-grid' },
             catImages.map((src, idx) =>
-                el('div', { key: idx, className: 'admin-item-card' },
+                el('div', { key: idx, className: `admin-item-card ${selectedIndices.includes(idx) ? 'selected' : ''}`, onClick: () => toggleSelect(idx) },
+                    el('div', { className: 'selection-checkbox' },
+                        el('i', { className: selectedIndices.includes(idx) ? 'fa-solid fa-square-check' : 'fa-regular fa-square' })
+                    ),
                     el('img', { src: src, alt: '' }),
-                    el('button', { className: 'btn-delete', onClick: () => saveCatImages(catImages.filter((_, i) => i !== idx)) }, el('i', { className: 'fa-solid fa-trash' }))
+                    el('button', { className: 'btn-delete single-delete', onClick: (e) => { e.stopPropagation(); saveCatImages(catImages.filter((_, i) => i !== idx)); } }, el('i', { className: 'fa-solid fa-trash' }))
                 )
             )
         )
     );
 }
 
-function AdminMontagesManager() {
-    const defaultMontages = [
-        { clientName: "Pravin & Sakthi", url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4", thumb: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=600" },
-        { clientName: "Surya & Jothika", url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4", thumb: "https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&q=80&w=600" },
-        { clientName: "Vijay & Sangeetha", url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4", thumb: "https://images.unsplash.com/photo-1544078751-58fee2d8a03b?auto=format&fit=crop&q=80&w=600" }
-    ];
-    const [montages, setMontages] = React.useState(defaultMontages);
+function AdminMontagesManager({ onUpdate }) {
+    const [montages, setMontages] = React.useState([]);
     const [newMon, setNewMon] = React.useState({ clientName: '', url: '', thumb: '' });
 
     React.useEffect(() => {
         fetch(`${window.API_URL}/api/montages`)
             .then(res => res.json())
             .then(data => {
-                if (Array.isArray(data) && data.length > 0) {
+                if (Array.isArray(data)) {
                     setMontages(data);
                 }
             })
@@ -565,13 +846,17 @@ function AdminMontagesManager() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ montages: newList })
         })
-            .then(res => {
-                if (!res.ok) throw new Error('Update failed');
+            .then(async res => {
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    throw new Error(data.error || res.statusText || 'Update failed');
+                }
+                onUpdate && onUpdate();
                 alert('Montages updated successfully!');
             })
             .catch(err => {
                 console.error('Error saving montages:', err);
-                alert('Large video files (Base64) cannot be saved to MongoDB. Please use external URLs for large videos.');
+                alert(`Error: ${err.message}. Ensure video links are valid and total data (Base64 images) is under 16MB.`);
             });
     };
 
@@ -579,6 +864,9 @@ function AdminMontagesManager() {
         if (!newMon.clientName || !newMon.url) return;
         saveChanges([...montages, newMon]);
         setNewMon({ clientName: '', url: '', thumb: '' });
+        // Clear file inputs
+        const fileInputs = document.querySelectorAll('input[type="file"]');
+        fileInputs.forEach(input => input.value = "");
     };
 
     return el('div', { className: 'admin-section' },
@@ -587,6 +875,7 @@ function AdminMontagesManager() {
             el('div', { className: 'form-grid' },
                 el('input', { type: 'text', placeholder: 'Client Name (Overlay text)', value: newMon.clientName, onChange: (e) => setNewMon({ ...newMon, clientName: e.target.value }) }),
                 el('input', { type: 'text', placeholder: 'Video URL (or paste link)', value: newMon.url, onChange: (e) => setNewMon({ ...newMon, url: e.target.value }) }),
+                el('input', { type: 'text', placeholder: 'Thumbnail URL (Optional)', value: newMon.thumb, onChange: (e) => setNewMon({ ...newMon, thumb: e.target.value }) }),
 
                 el('div', { className: 'control-group', style: { gridColumn: 'span 2' } },
                     el('p', { style: { fontSize: '0.9rem', marginBottom: '5px', fontWeight: 'bold' } }, 'Or Upload directly:'),
@@ -608,6 +897,156 @@ function AdminMontagesManager() {
                     )
                 )
             )
+        )
+    );
+}
+
+function AdminInnerPagesManager({ onUpdate }) {
+    const CARDS = [
+        { title: 'Pravin Weds Sakthi' },
+        { title: 'Surya Weds Jothika' },
+        { title: 'Vijay Weds Sangeetha' },
+        { title: 'Ajith Weds Shalini' }
+    ];
+
+    const [selectedCard, setSelectedCard] = React.useState(CARDS[0].title);
+    const [cardImages, setCardImages] = React.useState([]);
+    const [loading, setLoading] = React.useState(false);
+    const [selectedIndices, setSelectedIndices] = React.useState([]);
+
+    React.useEffect(() => {
+        if (!selectedCard) return;
+        setLoading(true);
+        fetch(`${window.API_URL}/api/inner-images/${encodeURIComponent(selectedCard)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (Array.isArray(data)) setCardImages(data);
+                else setCardImages([]);
+                setSelectedIndices([]);
+                setLoading(false);
+            })
+            .catch(err => { console.error('Error fetching inner images:', err); setLoading(false); });
+    }, [selectedCard]);
+
+    const saveImages = (newList) => {
+        if (newList.length > 50) {
+            alert('Maximum 50 images per inner page!');
+            return;
+        }
+        setCardImages(newList);
+        setSelectedIndices([]);
+
+        // Internal cache update for Stories
+        if (!window.globalAssetCache.innerImages) window.globalAssetCache.innerImages = {};
+        window.globalAssetCache.innerImages[selectedCard] = newList;
+
+        fetch(`${window.API_URL}/api/inner-images/${encodeURIComponent(selectedCard)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ images: newList })
+        })
+            .then(res => {
+                if (!res.ok) throw new Error(res.statusText);
+                onUpdate && onUpdate();
+                console.log(`Inner Page: ${selectedCard} synchronized with MongoDB`);
+            })
+            .catch(err => {
+                console.error('Error saving inner images:', err);
+                alert(`Error: ${err.message}`);
+            });
+    };
+
+    const toggleSelect = (idx) => {
+        setSelectedIndices(prev =>
+            prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]
+        );
+    };
+
+    const deleteSelected = () => {
+        if (!selectedIndices.length) return;
+        if (!confirm(`Delete ${selectedIndices.length} selected images from ${selectedCard}?`)) return;
+        const newList = cardImages.filter((_, idx) => !selectedIndices.includes(idx));
+        saveImages(newList);
+    };
+
+    return el('div', { className: 'admin-section' },
+        el('div', { className: 'welcome-card', style: { marginBottom: '2rem' } },
+            el('h2', null, 'Inner Page Gallery (Max 50 per Story)'),
+            el('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                el('p', { style: { margin: 0 } }, selectedCard ? `${cardImages.length}/50 images in "${selectedCard}". ${50 - cardImages.length} slots remaining.` : 'Please select a story below.'),
+                selectedCard && cardImages.length > 0 && el('button', {
+                    className: 'btn-secondary',
+                    style: { padding: '5px 12px', fontSize: '0.8rem' },
+                    onClick: () => {
+                        if (selectedIndices.length === cardImages.length) setSelectedIndices([]);
+                        else setSelectedIndices(cardImages.map((_, i) => i));
+                    }
+                }, selectedIndices.length === cardImages.length ? 'Deselect All' : 'Select All')
+            )
+        ),
+        el('div', { className: 'admin-modal-form' },
+            el('h3', null, 'Select Story & Manage Images'),
+            el(AdminDropdown, {
+                label: 'Choose Story',
+                value: selectedCard,
+                options: CARDS.map(c => ({ label: c.title, value: c.title })),
+                onChange: (val) => setSelectedCard(val)
+            }),
+            selectedCard && el('div', { className: 'upload-controls', style: { marginTop: '1.5rem' } },
+                el('div', { className: 'control-group' },
+                    el('h4', null, `Upload Images to "${selectedCard}" (1 to 5 at a time)`),
+                    el('p', { style: { fontSize: '0.8rem', color: '#999', marginBottom: '8px' } },
+                        `${cardImages.length}/50 images uploaded. ${50 - cardImages.length} slots remaining.`),
+                    el('input', {
+                        type: 'file',
+                        accept: 'image/*',
+                        multiple: true,
+                        onChange: (e) => {
+                            const remaining = 50 - cardImages.length;
+                            if (remaining <= 0) {
+                                alert('This story is full (Max 50 images)! Delete some to add more.');
+                                e.target.value = '';
+                                return;
+                            }
+                            const batchLimit = Math.min(5, remaining);
+                            const files = Array.from(e.target.files).slice(0, batchLimit);
+                            if (e.target.files.length > batchLimit) {
+                                alert(`Adding the first ${batchLimit} selected files.`);
+                            }
+                            filesToBase64(files).then(base64s => {
+                                saveImages([...base64s, ...cardImages]);
+                                e.target.value = '';
+                            });
+                        }
+                    })
+                ),
+            )
+        ),
+        selectedIndices.length > 0 && el('div', { className: 'selection-actions' },
+            el('span', { className: 'selection-info' },
+                el('i', { className: 'fa-solid fa-check-double', style: { marginRight: '8px' } }),
+                `${selectedIndices.length} selected from "${selectedCard}"`
+            ),
+            el('button', { className: 'btn-delete bulk-delete', onClick: deleteSelected },
+                el('i', { className: 'fa-solid fa-trash-can' }),
+                `Delete Selected`
+            )
+        ),
+        loading && el('p', { style: { padding: '2rem', color: '#999' } }, 'Loading images...'),
+        !loading && selectedCard && el('div', { className: 'admin-grid' },
+            cardImages.length === 0
+                ? el('p', { style: { color: '#999', gridColumn: '1/-1', padding: '2rem 0' } }, 'No images yet. Upload some above.')
+                : cardImages.map((src, idx) =>
+                    el('div', { key: idx, className: `admin-item-card ${selectedIndices.includes(idx) ? 'selected' : ''}`, onClick: () => toggleSelect(idx) },
+                        el('div', { className: 'selection-checkbox' },
+                            el('i', { className: selectedIndices.includes(idx) ? 'fa-solid fa-square-check' : 'fa-regular fa-square' })
+                        ),
+                        el('img', { src: src, alt: '' }),
+                        el('button', { className: 'btn-delete single-delete', onClick: (e) => { e.stopPropagation(); saveImages(cardImages.filter((_, i) => i !== idx)); } },
+                            el('i', { className: 'fa-solid fa-trash' })
+                        )
+                    )
+                )
         )
     );
 }

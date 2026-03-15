@@ -1,49 +1,232 @@
 // home.js
 
+// home.js
+
 function Hero() {
-    const images = [
-        'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&q=80&w=1000',
-        'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&q=80&w=1000',
-        'https://images.unsplash.com/photo-1606800052052-a08af7148866?auto=format&fit=crop&q=80&w=1000'
-    ];
+    const textRef = React.useRef(null);
+    const imageRef = React.useRef(null);
 
-    const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
-
+    // Cinematic intro animation
     React.useEffect(() => {
-        const interval = setInterval(() => {
-            setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
-        }, 3000); // Change image every 3 seconds
-
-        return () => clearInterval(interval);
+        if (textRef.current && typeof gsap !== 'undefined') {
+            gsap.fromTo(
+                textRef.current.children,
+                { opacity: 0, y: 0 },
+                {
+                    opacity: 1,
+                    y: 0,
+                    duration: 1.4,
+                    stagger: 0.15,
+                    ease: "power3.out",
+                    delay: 0.5
+                }
+            );
+        }
     }, []);
 
-    return el('section', { className: 'hero' },
-        el('div', { className: 'hero-content' },
-            el(Reveal, { animation: 'fade-up', delay: 100 }, el('div', { className: 'hero-subtitle' }, 'Kavithakal Studio Presents')),
-            el(Reveal, { animation: 'fade-up', delay: 300 }, el('h1', null, 'We frame your love story in')),
-            el(Reveal, { animation: 'fade-up', delay: 400 }, el('h1', null, 'timeless photographs.')),
-            el(Reveal, { animation: 'fade-up', delay: 500 }, el('p', null, 'Capture the magic of your most special moments with visually stunning and emotionally rich photography.')),
-            el(Reveal, { animation: 'fade-up', delay: 600 }, el('div', { className: 'hero-buttons' },
-                el('button', { className: 'btn btn-primary' }, 'Book your Shoot'),
-                el('a', { className: 'btn btn-secondary', href: '#portfolio' }, 'View Portfolio')
-            ))
-        ),
-        el('div', { className: 'hero-image' },
+    // Optimized Apple-style parallax using global emitter
+    React.useEffect(() => {
+        const handleCustomScroll = (e) => {
+            // ✅ Use the animated scroll position from Lenis for perfect sync
+            const scrollY = e.detail && e.detail.scroll !== undefined ? e.detail.scroll : window.scrollY;
+            if (imageRef.current && scrollY < window.innerHeight * 1.5) {
+                const progress = Math.min(scrollY / window.innerHeight, 1);
+                // Directly set styles - use translate3d for GPU acceleration
+                // REMOVED opacity change to ensure image doesn't disappear/fade
+                imageRef.current.style.transform = `translate3d(0, ${scrollY * 0.15}px, 0) scale(${1.05 + progress * 0.1})`;
+            }
+        };
+
+        window.addEventListener("ks-scroll", handleCustomScroll);
+        return () => window.removeEventListener("ks-scroll", handleCustomScroll);
+    }, []);
+
+    const [screenWidth, setScreenWidth] = React.useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+
+    React.useEffect(() => {
+        const handleResize = () => setScreenWidth(window.innerWidth);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    const isMobile = screenWidth < 768;
+    const isTablet = screenWidth >= 768 && screenWidth < 1024;
+
+    const heroStyles = {
+        section: {
+            display: "flex",
+            flexDirection: isMobile ? "column" : "row",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "100vh",
+            padding: (isMobile || isTablet) ? "130px 8% 130px" : "100px 8% 100px",
+            background: "linear-gradient(135deg, rgba(72, 72, 72, 1) 0%, rgba(209, 207, 207, 0.65) 100%)",
+            fontFamily: "'Playfair Display', Georgia, 'Times New Roman', serif",
+            color: "#ffffff",
+            position: "relative",
+            overflow: "hidden",
+            textAlign: isMobile ? "center" : "left"
+        },
+        left: {
+            flex: isMobile ? "none" : 1.2,
+            maxWidth: isMobile ? "100%" : "700px",
+            zIndex: 10,
+            willChange: "transform, opacity",
+            width: "100%"
+        },
+        right: {
+            flex: 1,
+            display: "flex",
+            justifyContent: isMobile ? "center" : "flex-end",
+            height: isMobile ? "400px" : "auto",
+            alignItems: "center",
+            position: "relative",
+            width: "100%",
+            marginTop: isMobile ? "3rem" : 0,
+            marginLeft: isMobile ? 0 : "4rem",
+            zIndex: 5
+        },
+        title: {
+            fontFamily: "'Playfair Display', Georgia, 'Times New Roman', serif",
+            fontSize: isMobile ? "2.2rem" : "3.5rem",
+            fontWeight: "700",
+            lineHeight: "1.2",
+            letterSpacing: "-1px",
+            marginBottom: "0",
+            color: "#ffffff",
+        },
+        subtitle: {
+            fontSize: isMobile ? "1rem" : "1.15rem",
+            color: "rgba(255, 255, 255, 0.85)",
+            lineHeight: "1.6",
+            maxWidth: isMobile ? "100%" : "480px",
+            marginBottom: isMobile ? "2rem" : "3rem",
+            fontWeight: "400",
+            margin: isMobile ? "0 auto 2.5rem" : "0 0 3rem"
+        },
+        buttonGroup: {
+            display: "flex",
+            gap: "0.8rem",
+            alignItems: "center",
+            justifyContent: (isMobile || isTablet) ? "center" : "flex-start",
+            flexWrap: "nowrap",
+            width: "100%"
+        },
+        buttonPrimary: {
+            padding: (isMobile || isTablet) ? "12px 20px" : "18px 42px",
+            fontSize: (isMobile || isTablet) ? "15px" : "17px",
+            borderRadius: "50px",
+            border: "none",
+            background: "#ff2d55",
+            color: "#ffffff",
+            cursor: "pointer",
+            transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+            fontWeight: "600",
+            letterSpacing: "0.2px",
+            display: "inline-block",
+            textDecoration: "none",
+            boxShadow: "0 12px 35px rgba(255, 45, 85, 0.4)"
+        },
+        buttonSecondary: {
+            padding: (isMobile || isTablet) ? "12px 20px" : "18px 42px",
+            fontSize: (isMobile || isTablet) ? "15px" : "17px",
+            borderRadius: "50px",
+            border: "1.5px solid rgba(255, 255, 255, 0.5)",
+            background: "rgba(255, 255, 255, 0.15)",
+            color: "#ffffff",
+            cursor: "pointer",
+            transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+            fontWeight: "600",
+            letterSpacing: "0.2px",
+            display: "inline-block",
+            textDecoration: "none",
+            backdropFilter: "blur(12px)"
+        },
+        imageContainer: {
+            width: isMobile ? "100%" : "90%",
+            height: isMobile ? "100%" : "70vh",
+            borderRadius: isMobile ? "32px" : "60px",
+            overflow: "hidden",
+            boxShadow: "0 50px 100px rgba(0,0,0,0.3)",
+            background: "rgba(255,255,255,0.05)"
+        },
+        image: {
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            transform: "translate3d(0,0,0) scale(1.05)",
+            filter: "brightness(1.02)",
+            willChange: "transform"
+        }
+    };
+
+    const ImageElement = el('div', { style: heroStyles.right },
+        el('div', { style: heroStyles.imageContainer },
             el('img', {
-                src: images[currentImageIndex],
-                alt: 'Indian Wedding Photography'
+                ref: imageRef,
+                src: './public/shantanu-kumar-1clnR1l3Ls4-unsplash.jpg',
+                alt: 'Cinematic Wedding Photography',
+                style: heroStyles.image
             })
         )
+    );
+
+    return el('section', { style: heroStyles.section },
+        // LEFT TEXT
+        el('div', { ref: textRef, style: heroStyles.left },
+            el('p', {
+                style: {
+                    fontSize: '0.75rem',
+                    fontWeight: '500',
+                    letterSpacing: '2px',
+                    textTransform: 'uppercase',
+                    color: 'rgba(255,255,255,0.7)',
+                    marginBottom: '1rem'
+                }
+            }, 'Kavithakal Studio Presents'),
+            el('div', { style: { display: 'block', marginBottom: '2rem' } },
+                el(AppleTextReveal, {
+                    text: 'We frame your love story',
+                    style: { ...heroStyles.title, marginBottom: '0', display: 'block' },
+                    highlightIndices: []
+                }),
+                el(AppleTextReveal, {
+                    text: 'in timeless photographs.',
+                    style: { ...heroStyles.title, marginBottom: '0', display: 'block' },
+                    highlightIndices: [],
+                    delay: 300
+                })
+            ),
+            el('p', { style: heroStyles.subtitle },
+                'Capture the magic of your most special moments with visually stunning and emotionally rich photography.'
+            ),
+
+            // Add image below subtitle only on mobile
+            isMobile && ImageElement,
+
+            // Show buttons on all devices but in a single row
+            el('div', { style: heroStyles.buttonGroup },
+                el('a', {
+                    href: '#contact',
+                    style: heroStyles.buttonPrimary
+                }, 'Book your Shoot'),
+                el('a', {
+                    href: '#portfolio',
+                    style: heroStyles.buttonSecondary
+                }, 'View Portfolio')
+            )
+        ),
+
+        // RIGHT IMAGE - Only shown on desktop
+        !isMobile && ImageElement
     );
 }
 
 function ExploreWork({ onCardClick }) {
     const cards = CARDS;
-
     const [currentIndex, setCurrentIndex] = React.useState(0);
-    const [touchStart, setTouchStart] = React.useState(null);
-    const [touchEnd, setTouchEnd] = React.useState(null);
     const [isTransitioning, setIsTransitioning] = React.useState(true);
+    const carouselRef = React.useRef(null);
 
     const getCardsToShow = () => {
         if (typeof window !== 'undefined') {
@@ -60,9 +243,7 @@ function ExploreWork({ onCardClick }) {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    // Create a cloned array for infinite loop effect
     const extendedCards = [...cards];
-    // Clone enough cards at the end to cover the visible window, but ONLY if not mobile
     if (cardsToShow > 1) {
         for (let i = 0; i < cardsToShow; i++) {
             extendedCards.push(cards[i]);
@@ -81,99 +262,95 @@ function ExploreWork({ onCardClick }) {
         setCurrentIndex((prevIndex) => prevIndex - 1);
     }, [currentIndex]);
 
-    // Handle seamless infinite loop snapping
-    React.useEffect(() => {
-        if (currentIndex === cards.length) {
-            const timer = setTimeout(() => {
-                setIsTransitioning(false);
-                setCurrentIndex(0);
-            }, 500); // Wait for transition
-            return () => clearTimeout(timer);
-        }
-    }, [currentIndex, cards.length]);
+    // ✅ Sync with GSAP for butter-smooth sliding
+    React.useLayoutEffect(() => {
+        if (!carouselRef.current) return;
 
-    // Auto slide exactly 1 card every 2 seconds
+        gsap.to(carouselRef.current, {
+            xPercent: -currentIndex * (100 / cardsToShow),
+            duration: isTransitioning ? 0.8 : 0,
+            ease: "expo.out",
+            force3D: true,
+            onComplete: () => {
+                if (currentIndex === cards.length) {
+                    setIsTransitioning(false);
+                    setCurrentIndex(0);
+                }
+            }
+        });
+    }, [currentIndex, cardsToShow, isTransitioning]);
+
     React.useEffect(() => {
-        const interval = setInterval(() => {
-            nextSlide();
-        }, 2000);
+        const interval = setInterval(nextSlide, 3000);
         return () => clearInterval(interval);
     }, [nextSlide]);
 
-    // Touch handlers for swiping
-    const minSwipeDistance = 50;
-
-    const onTouchStart = (e) => {
-        setTouchEnd(null);
-        setTouchStart(e.targetTouches[0].clientX);
-    };
-
-    const onTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
-
-    const onTouchEndHandler = () => {
-        if (!touchStart || !touchEnd) return;
-
-        const distance = touchStart - touchEnd;
-        const isLeftSwipe = distance > minSwipeDistance;
-        const isRightSwipe = distance < -minSwipeDistance;
-
-        if (isLeftSwipe) {
-            nextSlide();
-        } else if (isRightSwipe) {
-            prevSlide();
-        }
-    };
-
-    return el('section', { className: 'explore-work' },
-        el(Reveal, { animation: 'fade-up' }, el('h2', null, 'Explore ', el('span', null, 'our'), ' Work')),
-        el(Reveal, { animation: 'fade-up', delay: 100 }, el('p', { className: 'section-subtitle', style: { color: '#666', marginBottom: '2rem' } }, 'Capturing your timeless stories, frame by frame.')),
-        el('div', { className: 'cards-wrapper' },
-            el('div', {
-                className: `carousel-arrow left`,
-                onClick: prevSlide
-            }, el('i', { className: 'fa-solid fa-chevron-left' })),
-
-            el('div', {
-                className: 'cards-viewport',
-                onTouchStart: onTouchStart,
-                onTouchMove: onTouchMove,
-                onTouchEnd: onTouchEndHandler
-            },
+    return el('section', { className: 'explore-work', style: { background: '#fff', padding: '120px 8%' } },
+        el(AppleTextReveal, { text: 'Explore our Work', style: { marginBottom: '1.5rem', color: '#1d1d1f' } }),
+        el(Reveal, { animation: 'fade-up', delay: 150 },
+            el('p', { style: { fontSize: '1.2rem', color: '#666', marginBottom: '4rem', fontWeight: '400' } },
+                'A glimpse into the stories we’ve had the honor to capture.'
+            )
+        ),
+        el(Reveal, { animation: 'zoom-in', delay: 300, className: 'cards-wrapper' },
+            el('div', { className: 'cards-viewport' },
                 el('div', {
+                    ref: carouselRef,
                     className: 'cards-container-inner',
-                    style: {
-                        transform: `translateX(-${currentIndex * (100 / cardsToShow)}%)`,
-                        transition: isTransitioning ? 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)' : 'none'
-                    }
+                    style: { transition: 'none' } // Use GSAP instead
                 },
                     extendedCards.map((card, index) =>
                         el(Card, { key: index, card: card, index: index, onClick: () => onCardClick(card) })
                     )
                 )
-            ),
-
-            el('div', {
-                className: `carousel-arrow right`,
-                onClick: nextSlide
-            }, el('i', { className: 'fa-solid fa-chevron-right' }))
+            )
         )
     );
 }
 
 function Card({ card, index, onClick }) {
-    return el('div', { className: 'card', style: { cursor: 'pointer' }, onClick: onClick },
-        el(Reveal, { animation: 'zoom-in', delay: index % 6 * 150 },
-            el('img', { src: card.image, alt: card.title }),
-            el('div', { className: 'card-content' },
-                el('h3', null, card.title),
-                el('p', null, card.description)
+    return el('div', {
+        className: 'card',
+        style: {
+            cursor: 'pointer',
+            borderRadius: '24px',
+            overflow: 'hidden',
+            background: '#f5f5f7',
+            transition: 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+            boxShadow: 'none',
+            border: 'none',
+            marginRight: '20px'
+        },
+        onClick: onClick
+    },
+        el('div', { style: { overflow: 'hidden', aspectRatio: '16/10' } },
+            el('img', {
+                src: card.image,
+                alt: card.title,
+                style: {
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    transition: 'transform 1s ease'
+                }
+            })
+        ),
+        el('div', { className: 'card-content', style: { padding: '1.5rem', background: '#fff' } },
+            el(Reveal, { animation: 'fade-up' },
+                el('h3', { style: { fontSize: '1.5rem', fontWeight: '700', marginBottom: '0.5rem', color: '#1d1d1f' } }, card.title)
+            ),
+            el(Reveal, { animation: 'fade-up', delay: 100 },
+                el('p', { style: { fontSize: '0.95rem', color: '#666' } }, card.description)
             )
         )
     );
 }
 
 function ReviewsSection() {
-    const [reviews, setReviews] = React.useState([]);
+    const [reviews, setReviews] = React.useState(() => {
+        const saved = localStorage.getItem('ks_reviews_cache');
+        return saved ? JSON.parse(saved) : [];
+    });
     const [currentIndex, setCurrentIndex] = React.useState(0);
     const [slideWidth, setSlideWidth] = React.useState(0);
     const [touchStart, setTouchStart] = React.useState(null);
@@ -183,7 +360,10 @@ function ReviewsSection() {
     React.useEffect(() => {
         fetch(`${window.API_URL}/api/reviews`)
             .then(res => res.json())
-            .then(data => setReviews(data))
+            .then(data => {
+                setReviews(data);
+                localStorage.setItem('ks_reviews_cache', JSON.stringify(data));
+            })
             .catch(err => console.error('Error fetching reviews:', err));
     }, []);
 
@@ -224,27 +404,18 @@ function ReviewsSection() {
 
     if (reviews.length === 0) return null;
 
-
-
     const minSwipeDistance = 50;
-
     const onTouchStart = (e) => {
         setTouchEnd(null);
         setTouchStart(e.targetTouches[0].clientX);
     };
-
     const onTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
-
-    const onTouchEnd = () => {
+    const onTouchEndHandler = () => {
         if (!touchStart || !touchEnd) return;
         const distance = touchStart - touchEnd;
-        const isLeftSwipe = distance > minSwipeDistance;
-        const isRightSwipe = distance < -minSwipeDistance;
-        if (isLeftSwipe) nextSlide();
-        if (isRightSwipe) prevSlide();
+        if (distance > minSwipeDistance) nextSlide();
+        if (distance < -minSwipeDistance) prevSlide();
         setTouchStart(null);
         setTouchEnd(null);
     };
-
-
 }

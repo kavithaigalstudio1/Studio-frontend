@@ -152,7 +152,9 @@ function VideoCard({ videoUrl, title, thumbnail }) {
             el('i', { className: isFullscreen ? 'fa-solid fa-compress' : 'fa-solid fa-expand' })
         ),
         el('div', { className: 'video-info', style: { color: 'white', zIndex: 11 } },
-            el('h4', { style: { color: 'white' } }, title)
+            el(Reveal, { animation: 'fade-up' },
+                el('h4', { style: { color: 'white', fontWeight: '700', fontSize: '1.2rem', margin: 0 } }, title)
+            )
         )
     );
 }
@@ -164,20 +166,23 @@ function Gallery({ onMenuToggle }) {
 
     const [activeImageIndex, setActiveImageIndex] = React.useState(null);
 
-    const [masonryImages, setMasonryImages] = React.useState([
-        './public/b1.jpg',
-        './public/b2.jpg',
-        './public/b3.jpg',
-        './public/b4.jpg',
-        './public/b5.jpg',
-        './public/b6.jpg'
-    ]);
+    const [masonryImages, setMasonryImages] = React.useState(() => {
+        return window.globalAssetCache.gallery || [];
+    });
 
     React.useEffect(() => {
         fetch(`${window.API_URL}/api/gallery`)
             .then(res => res.json())
             .then(data => {
-                if (Array.isArray(data) && data.length > 0) setMasonryImages(data);
+                if (Array.isArray(data)) {
+                    setMasonryImages(data);
+                    window.globalAssetCache.gallery = data;
+                    // Background pre-load entire gallery for smooth scroll
+                    data.forEach(url => {
+                        const img = new Image();
+                        img.src = url;
+                    });
+                }
             })
             .catch(err => console.error('Error fetching gallery:', err));
     }, []);
@@ -196,33 +201,60 @@ function Gallery({ onMenuToggle }) {
 
     const extendedFilms = films;
 
-    return el('div', { className: 'gallery-page-dark' },
-        el('div', { className: 'portfolio-header-area', style: { padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+    return el('div', { className: 'montages-page' },
+        el('div', { className: 'portfolio-header-area', style: { padding: '20px' } }),
 
-
-        ),
-
-        el('div', { className: 'gallery-hero' },
-            el(Reveal, { animation: 'fade-up' },
-                el('h1', { style: { color: 'black' } }, 'Our ', el('span', { style: { color: 'var(--pink-accent)' } }, 'Gallery'))
-            ),
-            el(Reveal, { animation: 'fade-up', delay: 200 },
-                el('p', null, 'A visual stream of our favourite moments – scroll through the stories frame by frame.')
+        el('div', { className: 'montages-hero', style: { textAlign: 'center', padding: '120px 8% 60px' } },
+            el(AppleTextReveal, { text: 'Our Gallery' }),
+            el(Reveal, { animation: 'fade-up', delay: 150 },
+                el('p', { style: { fontSize: '1.2rem', color: '#666', marginTop: '1.5rem', maxWidth: '700px', margin: '1.5rem auto 0' } }, 'A curated collection of our most cherished moments and cinematic stories.')
             )
         ),
 
-        el('div', { className: 'gallery-masonry-section', style: { padding: '5% 5%' } },
+        el('div', { className: 'montages-grid-container' },
             el('div', { className: 'fancy-masonry-grid' },
-                masonryImages.map((src, idx) =>
-                    el(Reveal, { key: idx, animation: 'fade-up', delay: idx * 100 },
-                        el('div', {
-                            className: 'fancy-masonry-item',
-                            onClick: () => setActiveImageIndex(idx),
-                            style: { cursor: 'pointer' }
-                        },
-                            el('img', { src: src, alt: `Gallery image ${idx + 1}` })
-                        )
-                    )
+                masonryImages.map((src, idx) => {
+                    const itemContent = el('div', {
+                        onClick: () => setActiveImageIndex(idx),
+                        style: { cursor: 'pointer' }
+                    },
+                        el('img', {
+                            src: src,
+                            alt: `Gallery image ${idx + 1}`,
+                            loading: 'eager',
+                            fetchpriority: idx < 12 ? 'high' : 'auto',
+                            decoding: 'sync',
+                            style: { display: 'block', width: '100%', minHeight: '100px' }
+                        })
+                    );
+
+                    // Photos 1-8 are rendered INSTANTLY (0s delay) for immediate page paint.
+                    // Further photos use the Reveal component for the premium on-scroll pops.
+                    if (idx < 8) {
+                        return el('div', { key: idx, className: 'fancy-masonry-item' }, itemContent);
+                    }
+
+                    return el(Reveal, {
+                        key: idx,
+                        animation: 'fade-up',
+                        delay: (idx % 4) * 40,
+                        duration: 0.5,
+                        className: 'fancy-masonry-item'
+                    }, itemContent);
+                })
+            )
+        ),
+
+        films.length > 0 && el('div', { className: 'montages-grid-container', style: { paddingTop: 0 } },
+            el(AppleTextReveal, { text: 'Cinematic Films', style: { textAlign: 'center', marginBottom: '3rem', fontSize: 'clamp(2.5rem, 6vw, 4rem)' } }),
+            el('div', { className: 'montages-grid' },
+                films.map((film, idx) =>
+                    el(VideoCard, {
+                        key: idx,
+                        title: film.title,
+                        videoUrl: film.url,
+                        thumbnail: film.thumb
+                    })
                 )
             )
         ),
@@ -235,31 +267,6 @@ function Gallery({ onMenuToggle }) {
             onPrev: () => setActiveImageIndex((prev) => (prev - 1 + masonryImages.length) % masonryImages.length)
         }),
 
-        el('div', { className: 'films-section' },
-            el(Reveal, { animation: 'fade-up' },
-                el('h2', { style: { color: 'black', textAlign: 'center' } },
-                    'View ',
-                    el('span', { style: { color: 'var(--pink-accent)' } }, 'My'),
-                    ' Films'
-                )
-            ),
-            el('div', { className: 'films-scroll-container' },
-                extendedFilms.map((film, idx) =>
-                    el(VideoCard, {
-                        key: idx,
-                        title: film.title,
-                        videoUrl: film.url,
-                        thumbnail: film.thumb
-                    })
-                )
-            )
-        ),
-
-        el(Reveal, { animation: 'zoom-in', delay: 100 },
-            el('div', { className: 'category-cta', style: { maxWidth: '1000px', margin: '4rem auto' } },
-                el('p', null, 'Ready to book your Shoot?'),
-                el('a', { href: '#contact', className: 'btn btn-primary' }, 'Get in touch')
-            )
-        )
+        el(BookShootCTA, null)
     );
 }

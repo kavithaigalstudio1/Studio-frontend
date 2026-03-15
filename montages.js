@@ -27,7 +27,9 @@ function MontageVideoCard({ videoUrl, clientName, thumbnail }) {
             el('div', { className: 'montage-thumb-container' },
                 el('img', { src: thumbnail || 'https://via.placeholder.com/600x338?text=Kavithakal+Studio', alt: clientName, className: 'montage-thumb' }),
                 el('div', { className: 'montage-overlay' },
-                    el('h3', null, clientName),
+                    el(Reveal, { animation: 'fade-up' },
+                        el('h3', null, clientName)
+                    ),
                     el('div', { className: 'play-btn-circle' },
                         el('i', { className: 'fa-solid fa-play' })
                     )
@@ -78,55 +80,51 @@ function Montages() {
         window.scrollTo(0, 0);
     }, []);
 
-    const [montageData, setMontageData] = React.useState([
-        { clientName: "Pravin & Sakthi", url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4", thumb: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=600" },
-        { clientName: "Surya & Jothika", url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4", thumb: "https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&q=80&w=600" },
-        { clientName: "Vijay & Sangeetha", url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4", thumb: "https://images.unsplash.com/photo-1544078751-58fee2d8a03b?auto=format&fit=crop&q=80&w=600" },
-        { clientName: "Ajith & Shalini", url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4", thumb: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&q=80&w=600" },
-        { clientName: "Gautham & Priya", url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4", thumb: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&q=80&w=600" },
-        { clientName: "Vikram & Anu", url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4", thumb: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&q=80&w=600" }
-    ]);
+    const [montageData, setMontageData] = React.useState(window.globalAssetCache.montages || []);
 
     React.useEffect(() => {
         fetch(`${window.API_URL}/api/montages`)
             .then(res => res.json())
             .then(data => {
-                if (Array.isArray(data) && data.length > 0) setMontageData(data);
+                if (Array.isArray(data)) {
+                    setMontageData(data);
+                    window.globalAssetCache.montages = data;
+                }
             })
             .catch(err => console.error('Error fetching montages:', err));
     }, []);
 
     return el('div', { className: 'montages-page' },
-        el('div', { className: 'montages-hero' },
-            el(Reveal, { animation: 'fade-up' },
-                el('h1', null, 'Wedding ', el('span', null, 'Montages'))
-            ),
-            el(Reveal, { animation: 'fade-up', delay: 200 },
-                el('p', null, 'Relive the cinematic highlights of our most precious stories.')
-            )
+        el('div', { className: 'montages-hero', style: { textAlign: 'center', padding: '120px 8% 60px' } },
+            el(AppleTextReveal, { text: 'Wedding Montages' }),
+            el(Reveal, { animation: 'fade-up', delay: 150 }, el('p', { style: { fontSize: '1.2rem', color: '#666', marginTop: '1.5rem' } }, 'Relive the cinematic highlights of our most precious stories.'))
         ),
 
         el('div', { className: 'montages-grid-container' },
             el('div', { className: 'montages-grid' },
-                montageData.map((montage, idx) =>
-                    el(Reveal, { key: idx, animation: 'fade-up', delay: idx * 100 },
-                        el(MontageVideoCard, {
-                            clientName: montage.clientName,
-                            videoUrl: montage.url,
-                            thumbnail: montage.thumb
-                        })
-                    )
-                )
+                montageData.map((montage, idx) => {
+                    const cardContent = el(MontageVideoCard, {
+                        clientName: montage.clientName,
+                        videoUrl: montage.url,
+                        thumbnail: montage.thumb
+                    });
+
+                    // First 3 cards are instant. Deep cards reveal on scroll.
+                    if (idx < 3) {
+                        return el('div', { key: idx, className: 'montage-card-wrapper' }, cardContent);
+                    }
+
+                    return el(Reveal, {
+                        key: idx,
+                        animation: 'fade-up',
+                        delay: (idx % 3) * 50,
+                        duration: 0.6,
+                        className: 'montage-card-reveal'
+                    }, cardContent);
+                })
             )
         ),
 
-        el('div', { className: 'book-shoot-cta' },
-            el(Reveal, { animation: 'zoom-in' },
-                el('div', { className: 'cta-card' },
-                    el('h2', null, 'Ready to book your Shoot?'),
-                    el('a', { href: '#contact', className: 'btn-pink-pill' }, 'Get in touch')
-                )
-            )
-        )
+        el(BookShootCTA, null)
     );
 }
