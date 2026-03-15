@@ -3259,6 +3259,19 @@ footer span {
     overflow-x: hidden;
 }
 
+@media (min-width: 769px) {
+    .review-videos-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 40px;
+    }
+}
+
+@media (min-width: 1200px) {
+    .review-videos-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
 .review-video-item {
     width: 100%;
     aspect-ratio: 16/9;

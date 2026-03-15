@@ -78,6 +78,83 @@ function BookShootCTA({ titlePart1 = 'Ready', titlePart2 = ' to book your Shoot?
 }
 window.BookShootCTA = BookShootCTA;
 
+function ReviewVideoCard({ videoUrl, thumbnail, title }) {
+    const [isPlaying, setIsPlaying] = React.useState(false);
+
+    if (!videoUrl) return null;
+
+    const isYouTube = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
+    let embedUrl = videoUrl;
+
+    if (isYouTube) {
+        if (videoUrl.includes('watch?v=')) {
+            const videoId = videoUrl.split('v=')[1].split('&')[0];
+            embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&origin=${window.location.origin}`;
+        } else if (videoUrl.includes('youtu.be/')) {
+            const videoId = videoUrl.split('youtu.be/')[1].split('?')[0];
+            embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&origin=${window.location.origin}`;
+        }
+    }
+
+    if (!isPlaying) {
+        return el('div', {
+            className: 'review-video-item',
+            onClick: () => setIsPlaying(true),
+            style: { position: 'relative', cursor: 'pointer' }
+        },
+            el('img', {
+                src: thumbnail || 'https://via.placeholder.com/600x338?text=Kavithakal+Video',
+                alt: title,
+                style: { width: '100%', height: '100%', objectFit: 'cover' }
+            }),
+            el('div', {
+                className: 'montage-overlay',
+                style: { background: 'rgba(0,0,0,0.3)' }
+            },
+                el('div', { className: 'play-btn-circle' },
+                    el('i', { className: 'fa-solid fa-play' })
+                )
+            )
+        );
+    }
+
+    return el('div', { className: 'review-video-item active-video', style: { position: 'relative' } },
+        isYouTube ?
+            el('iframe', {
+                src: embedUrl,
+                style: { width: '100%', height: '100%', border: 'none' },
+                allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
+                allowFullScreen: true
+            }) :
+            el('video', {
+                src: videoUrl,
+                controls: true,
+                autoPlay: true,
+                style: { width: '100%', height: '100%', backgroundColor: '#000' }
+            }),
+        el('button', {
+            onClick: (e) => { e.stopPropagation(); setIsPlaying(false); },
+            className: 'close-video-btn',
+            style: {
+                position: 'absolute',
+                top: '15px',
+                right: '15px',
+                zIndex: 10,
+                background: 'rgba(0,0,0,0.6)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '50%',
+                width: '35px',
+                height: '35px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+            }
+        }, el('i', { className: 'fa-solid fa-xmark' }))
+    );
+}
+
 function AnomaliesReview() {
     const [videos, setVideos] = React.useState(window.globalAssetCache.reviewVideos || []);
     const [reviews, setReviews] = React.useState(window.globalAssetCache.reviews || []);
@@ -262,7 +339,6 @@ function AnomaliesReview() {
         return `translateX(-${(currentIndex + (totalReviews > cardsToShow ? numClones : 0)) * slideWidth}px)`;
     }, [currentIndex, slideWidth, totalReviews, cardsToShow, numClones]);
 
-
     return el('div', { className: 'anomalies-review-page' },
 
 
@@ -270,55 +346,13 @@ function AnomaliesReview() {
             el(AppleTextReveal, { text: 'Anomalies Reviews', style: { textAlign: 'center' } }),
 
             el('div', { className: 'review-videos-grid' },
-                videos.map((vid, idx) => {
-                    const videoUrl = vid.videoUrl || '';
-                    const isYouTube = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
-                    let embedUrl = videoUrl;
-
-                    if (isYouTube) {
-                        if (videoUrl.includes('watch?v=')) {
-                            const videoId = videoUrl.split('v=')[1].split('&')[0];
-                            embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?origin=${window.location.origin}`;
-                        } else if (videoUrl.includes('youtu.be/')) {
-                            const videoId = videoUrl.split('youtu.be/')[1].split('?')[0];
-                            embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?origin=${window.location.origin}`;
-                        }
-                    }
-
-                    return el(Reveal, { key: idx, animation: 'fade-up', delay: idx * 100 },
-                        el('div', { className: 'review-video-item' },
-                            isYouTube ?
-                                el('iframe', {
-                                    src: embedUrl,
-                                    style: { width: '100%', height: '100%', border: 'none' },
-                                    allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
-                                    allowFullScreen: true
-                                }) :
-                                el('video', {
-                                    className: 'showcase-video',
-                                    src: videoUrl,
-                                    muted: true,
-                                    loop: true,
-                                    playsInline: true,
-                                    autoPlay: idx === 0,
-                                    onMouseEnter: (e) => { if (idx !== 0) e.target.play().catch(() => { }); },
-                                    onMouseLeave: (e) => {
-                                        if (idx !== 0) {
-                                            e.target.pause();
-                                            e.target.currentTime = 0;
-                                        }
-                                    },
-                                    style: {
-                                        width: '100%',
-                                        height: '100%',
-                                        objectFit: 'cover',
-                                        cursor: 'pointer',
-                                        transition: 'transform 0.3s ease'
-                                    }
-                                })
-                        )
-                    );
-                })
+                videos.map((vid, idx) => el(Reveal, { key: idx, animation: 'fade-up', delay: idx * 100 },
+                    el(ReviewVideoCard, { 
+                        videoUrl: vid.videoUrl, 
+                        thumbnail: vid.thumb, 
+                        title: vid.title 
+                    })
+                ))
             )
         ),
 
