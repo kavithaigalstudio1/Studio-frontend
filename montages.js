@@ -12,10 +12,10 @@ function MontageVideoCard({ videoUrl, clientName, thumbnail }) {
     if (isYouTube) {
         if (videoUrl.includes('watch?v=')) {
             const videoId = videoUrl.split('v=')[1].split('&')[0];
-            embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1`;
+            embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&origin=${window.location.origin}`;
         } else if (videoUrl.includes('youtu.be/')) {
             const videoId = videoUrl.split('youtu.be/')[1].split('?')[0];
-            embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1`;
+            embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&origin=${window.location.origin}`;
         }
     }
 
