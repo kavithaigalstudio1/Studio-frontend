@@ -2,6 +2,13 @@
 
 function MontageVideoCard({ videoUrl, clientName, thumbnail }) {
     const [isPlaying, setIsPlaying] = React.useState(false);
+    const videoRef = React.useRef(null);
+
+    React.useEffect(() => {
+        if (isPlaying && videoRef.current) {
+            videoRef.current.play().catch(err => console.log("Video play failed:", err));
+        }
+    }, [isPlaying]);
 
     // Safety check for empty URLs
     if (!videoUrl) return null;
@@ -48,11 +55,12 @@ function MontageVideoCard({ videoUrl, clientName, thumbnail }) {
                     allowFullScreen: true
                 }) :
                 el('video', {
+                    ref: videoRef,
                     src: videoUrl,
                     poster: thumbnail,
                     className: 'full-video',
                     controls: true,
-                    autoPlay: true,
+                    playsInline: true,
                     style: { width: '100%', height: '100%', backgroundColor: '#000' }
                 }),
             el('button', {

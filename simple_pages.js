@@ -80,6 +80,13 @@ window.BookShootCTA = BookShootCTA;
 
 function ReviewVideoCard({ videoUrl, thumbnail, title }) {
     const [isPlaying, setIsPlaying] = React.useState(false);
+    const videoRef = React.useRef(null);
+
+    React.useEffect(() => {
+        if (isPlaying && videoRef.current) {
+            videoRef.current.play().catch(err => console.log("Video play failed:", err));
+        }
+    }, [isPlaying]);
 
     if (!videoUrl) return null;
 
@@ -141,10 +148,11 @@ function ReviewVideoCard({ videoUrl, thumbnail, title }) {
                 allowFullScreen: true
             }) :
             el('video', {
+                ref: videoRef,
                 src: videoUrl,
                 poster: thumbnail,
                 controls: true,
-                autoPlay: true,
+                playsInline: true,
                 style: { width: '100%', height: '100%', backgroundColor: '#000' }
             }),
         el('button', {
