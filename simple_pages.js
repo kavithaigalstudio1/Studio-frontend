@@ -96,6 +96,14 @@ function ReviewVideoCard({ videoUrl, thumbnail, title }) {
         }
     }
 
+    let displayThumb = thumbnail;
+    if (!displayThumb && isYouTube) {
+        let videoId = '';
+        if (videoUrl.includes('watch?v=')) videoId = videoUrl.split('v=')[1].split('&')[0];
+        else if (videoUrl.includes('youtu.be/')) videoId = videoUrl.split('youtu.be/')[1].split('?')[0];
+        displayThumb = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+    }
+
     if (!isPlaying) {
         return el('div', {
             className: 'review-video-item',
@@ -103,9 +111,15 @@ function ReviewVideoCard({ videoUrl, thumbnail, title }) {
             style: { position: 'relative', cursor: 'pointer' }
         },
             el('img', {
-                src: thumbnail || 'https://via.placeholder.com/600x338?text=Kavithakal+Video',
+                src: displayThumb || 'https://via.placeholder.com/600x338?text=Kavithakal+Video',
                 alt: title,
-                style: { width: '100%', height: '100%', objectFit: 'cover' }
+                style: { width: '100%', height: '100%', objectFit: 'cover' },
+                onError: (e) => {
+                    // Fallback if maxresdefault doesn't exist
+                    if (e.target.src.includes('maxresdefault')) {
+                        e.target.src = e.target.src.replace('maxresdefault', 'mqdefault');
+                    }
+                }
             }),
             el('div', {
                 className: 'montage-overlay',

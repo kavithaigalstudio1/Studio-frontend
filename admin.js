@@ -186,7 +186,7 @@ function AdminPage() {
 
 function AdminReviewVideoManager({ onUpdate }) {
     const [videos, setVideos] = React.useState([]);
-    const [newUrl, setNewUrl] = React.useState('');
+    const [newVid, setNewVid] = React.useState({ videoUrl: '', thumb: '' });
     const MAX_SIZE = 16 * 1024 * 1024; // 16MB (MongoDB Document Limit)
 
     React.useEffect(() => {
@@ -207,70 +207,104 @@ function AdminReviewVideoManager({ onUpdate }) {
             .catch(err => console.error('Error saving review videos:', err));
     };
 
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        if (file.size > MAX_SIZE) {
-            alert('File size exceeds 250MB limit!');
+    const addReviewVideo = () => {
+        if (!newVid.videoUrl) {
+            alert('Please provide a video URL or upload a file.');
             return;
         }
-        handleFileUpload(file, (base64) => {
-            if (videos.length >= 6) {
-                alert('Only 6 videos allowed!');
-                return;
-            }
-            saveChanges([...videos, { videoUrl: base64 }]);
-        });
-    };
-
-    const addByUrl = () => {
-        if (!newUrl) return;
         if (videos.length >= 6) {
             alert('Only 6 videos allowed!');
             return;
         }
-        saveChanges([...videos, { videoUrl: newUrl }]);
-        setNewUrl('');
+        saveChanges([...videos, newVid]);
+        setNewVid({ videoUrl: '', thumb: '' });
+        // Clear file inputs
+        const fileInputs = document.querySelectorAll('input[type="file"]');
+        fileInputs.forEach(input => input.value = "");
     };
 
     return el('div', { className: 'admin-section', style: { marginBottom: '3rem' } },
         el('div', { className: 'welcome-card', style: { marginBottom: '2rem' } },
             el('h2', null, 'Showcase Videos (Max 6)'),
-            el('p', null, 'Add up to 6 videos for the Anomalies Review page. The 1st video plays automatically.'),
+            el('p', null, 'Add up to 6 videos with custom thumbnails for the Anomalies Review page.'),
             el('p', { style: { color: 'var(--pink-accent)', fontSize: '0.85rem', fontWeight: 'bold' } },
                 'Note: Standard video files must be under 16MB. For larger videos, please use YouTube links.')
         ),
-        el('div', { className: 'upload-controls' },
-            el('div', { className: 'control-group' },
-                el('h4', null, 'Add via YouTube URL'),
-                el('div', { className: 'input-row' },
-                    el('input', { type: 'text', placeholder: 'Paste Video URL...', value: newUrl, onChange: (e) => setNewUrl(e.target.value) }),
-                    el('button', { className: 'btn-add', onClick: addByUrl }, 'Add')
-                )
-            ),
-            el('div', { className: 'control-group' },
-                el('h4', null, 'Upload File (Max 16MB)'),
-                el('input', { type: 'file', accept: 'video/*', onChange: handleFileChange })
+
+        el('div', { className: 'admin-modal-form', style: { marginBottom: '2rem' } },
+            el('h3', null, 'Add New Review Video'),
+            el('div', { className: 'form-grid' },
+                el('div', { className: 'control-group' },
+                    el('label', { style: { display: 'block', marginBottom: '8px', fontSize: '0.9rem' } }, 'Video Source (URL or YouTube)'),
+                    el('input', {
+                        type: 'text',
+                        placeholder: 'Paste Video URL...',
+                        value: newVid.videoUrl,
+                        onChange: (e) => setNewVid({ ...newVid, videoUrl: e.target.value })
+                    })
+                ),
+                el('div', { className: 'control-group' },
+                    el('label', { style: { display: 'block', marginBottom: '8px', fontSize: '0.9rem' } }, 'Thumbnail Image (URL)'),
+                    el('input', {
+                        type: 'text',
+                        placeholder: 'Paste Thumbnail URL (Optional)...',
+                        value: newVid.thumb,
+                        onChange: (e) => setNewVid({ ...newVid, thumb: e.target.value })
+                    })
+                ),
+
+                el('div', { className: 'control-group', style: { gridColumn: 'span 2' } },
+                    el('p', { style: { fontSize: '0.9rem', marginBottom: '8px', fontWeight: 'bold' } }, 'Or Upload Files:'),
+                    el('div', { style: { display: 'flex', gap: '20px', flexWrap: 'wrap' } },
+                        el('div', { style: { flex: 1, minWidth: '200px' } },
+                            el('label', { style: { fontSize: '0.8rem', display: 'block', marginBottom: '4px' } }, 'Upload Video (Max 16MB):'),
+                            el('input', {
+                                type: 'file',
+                                accept: 'video/*',
+                                onChange: (e) => {
+                                    const file = e.target.files[0];
+                                    if (file && file.size > MAX_SIZE) { alert('Video exceeds 16MB!'); return; }
+                                    handleFileUpload(file, (b) => setNewVid({ ...newVid, videoUrl: b }));
+                                }
+                            })
+                        ),
+                        el('div', { style: { flex: 1, minWidth: '200px' } },
+                            el('label', { style: { fontSize: '0.8rem', display: 'block', marginBottom: '4px' } }, 'Upload Thumbnail:'),
+                            el('input', {
+                                type: 'file',
+                                accept: 'image/*',
+                                onChange: (e) => handleFileUpload(e.target.files[0], (b) => setNewVid({ ...newVid, thumb: b }))
+                            })
+                        )
+                    )
+                ),
+                el('button', {
+                    className: 'btn-add',
+                    style: { gridColumn: 'span 2', marginTop: '10px' },
+                    onClick: addReviewVideo
+                }, 'Add Video to Reviews')
             )
         ),
+
         el('div', { className: 'admin-grid', style: { gridTemplateColumns: 'repeat(3, 1fr)' } },
             videos.map((vid, idx) => {
                 const isYouTube = vid.videoUrl.includes('youtube.com') || vid.videoUrl.includes('youtu.be');
-                let thumb;
-                if (isYouTube) {
+                let displayThumb = vid.thumb;
+
+                if (!displayThumb && isYouTube) {
                     let videoId = '';
                     if (vid.videoUrl.includes('watch?v=')) videoId = vid.videoUrl.split('v=')[1].split('&')[0];
                     else if (vid.videoUrl.includes('youtu.be/')) videoId = vid.videoUrl.split('youtu.be/')[1].split('?')[0];
-                    thumb = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+                    displayThumb = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
                 }
 
                 return el('div', { key: idx, className: 'admin-item-card' },
-                    isYouTube ?
+                    displayThumb ?
                         el('div', { style: { height: '150px', position: 'relative', background: '#000' } },
-                            el('img', { src: thumb, style: { width: '100%', height: '100%', objectFit: 'cover', opacity: 0.7 } }),
-                            el('i', { className: 'fa-brands fa-youtube', style: { position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'red', fontSize: '2rem' } })
+                            el('img', { src: displayThumb, style: { width: '100%', height: '100%', objectFit: 'cover' } }),
+                            isYouTube && el('i', { className: 'fa-brands fa-youtube', style: { position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'red', fontSize: '2rem', opacity: 0.8 } })
                         ) :
-                        el('video', { src: vid.videoUrl, style: { width: '100%', height: '150px', objectFit: 'cover', borderRadius: '10px' } }),
+                        el('video', { src: vid.videoUrl, style: { width: '100%', height: '150px', objectFit: 'cover' } }),
                     el('div', { style: { padding: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
                         el('span', null, `Video ${idx + 1}`),
                         el('button', { className: 'btn-delete', onClick: () => saveChanges(videos.filter((_, i) => i !== idx)) }, el('i', { className: 'fa-solid fa-trash' }))
