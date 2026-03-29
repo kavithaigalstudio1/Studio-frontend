@@ -1,6 +1,6 @@
 :root {
     --primary-gradient: linear-gradient(135deg, rgba(219, 219, 219, 0.575) 0%, rgb(235, 227, 227) 100%);
-    --bg-dark: #000000;
+    --bg-dark: #111111;
     --text-light: #ffffff;
     --text-dark: #333333;
     --pink-accent: #e76089;
@@ -614,7 +614,7 @@ body {
 
 /* Header */
 header {
-    background-color: #000000;
+    background-color: var(--bg-dark);
     color: #3b3b3b;
     padding: 1rem 5%;
     display: flex;
@@ -623,6 +623,7 @@ header {
     position: sticky;
     top: 0;
     z-index: 100;
+    background-color: var(--bg-dark);
     transform: translateY(0);
     transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease;
 }
@@ -2290,11 +2291,10 @@ footer span {
 
 @media (max-width: 768px) {
     .video-custom-controls {
-        opacity: 1 !important;
-        /* Always visible on mobile for UX */
+        opacity: 1 !important; /* Always visible on mobile for UX */
         padding: 10px !important;
     }
-
+    
     .video-mini-btn {
         width: 34px !important;
         height: 34px !important;
@@ -2548,8 +2548,7 @@ html.lenis-scrolling .active-video {
 }
 
 /* Ensure smooth pointer event return */
-iframe,
-video {
+iframe, video {
     transition: pointer-events 0.1s ease;
 }
 
