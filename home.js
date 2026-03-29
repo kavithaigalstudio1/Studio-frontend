@@ -405,12 +405,12 @@ function ReviewsSection() {
     if (reviews.length === 0) return null;
 
     const minSwipeDistance = 50;
-    const onTouchStart = (e) => {
+    const handleTouchStart = (e) => {
         setTouchEnd(null);
         setTouchStart(e.targetTouches[0].clientX);
     };
-    const onTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
-    const onTouchEndHandler = () => {
+    const handleTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
+    const handleTouchEndHandler = () => {
         if (!touchStart || !touchEnd) return;
         const distance = touchStart - touchEnd;
         if (distance > minSwipeDistance) nextSlide();
@@ -418,4 +418,33 @@ function ReviewsSection() {
         setTouchStart(null);
         setTouchEnd(null);
     };
+
+    return el('section', { className: 'home-reviews-preview', style: { padding: '100px 8%', background: '#fff' } },
+        el(AppleTextReveal, { text: 'What People Say', style: { fontSize: '2.5rem', marginBottom: '3rem' } }),
+        el('div', { 
+            className: 'home-review-card',
+            onTouchStart: handleTouchStart, 
+            onTouchMove: handleTouchMove, 
+            onTouchEnd: handleTouchEndHandler,
+            style: {
+                background: '#f9f9f9',
+                padding: '3rem',
+                borderRadius: '40px',
+                textAlign: 'center',
+                maxWidth: '800px',
+                margin: '0 auto',
+                boxShadow: '0 20px 40px rgba(0,0,0,0.03)'
+            }
+        },
+            el('i', { className: 'fa-solid fa-quote-left', style: { fontSize: '2rem', color: '#ff2d6c', opacity: 0.2, marginBottom: '1.5rem', display: 'block' } }),
+            el('p', { style: { fontSize: '1.25rem', lineHeight: '1.6', color: '#333', marginBottom: '2rem' } }, 
+                reviews[currentIndex] ? `"${reviews[currentIndex].reviewText}"` : 'Fetching your stories...'
+            ),
+            el('h4', { style: { fontSize: '1.2rem', fontWeight: '700', marginBottom: '4px' } }, reviews[currentIndex]?.name || ''),
+            el('p', { style: { color: '#888', fontSize: '0.9rem' } }, 'Verified Review')
+        ),
+        el('div', { style: { textAlign: 'center', marginTop: '3rem' } },
+            el('a', { href: '#reviews', className: 'btn-pink-pill' }, 'See All Reviews')
+        )
+    );
 }

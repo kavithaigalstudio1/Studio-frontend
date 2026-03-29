@@ -652,14 +652,19 @@ function Contact() {
             .catch(err => console.error('Error fetching contact info:', err));
     }, []);
 
-    const phone1 = info ? info.phone1 : '+91 93846 84082';
-    const phone2 = info ? info.phone2 : '';
-    const email = info ? info.email : 'kavithaigalstudio@gmail.com';
-    const address = info ? info.address : 'Tamil Nadu, India';
-    const instagram = info ? info.instagram : 'https://www.instagram.com/kavithaigal_studio';
-    const whatsapp = info ? info.whatsapp : 'https://wa.me/919384684082';
-    const mapsUrl = info ? info.mapsUrl : '';
-    const workingHours = info ? info.workingHours : 'Mon – Sat: 9 AM – 7 PM';
+    // Safety checks for variables
+    const phone1 = info?.phone1 || '+91 93846 84082';
+    const phone2 = info?.phone2 || '';
+    const email = info?.email || 'kavithaigalstudio@gmail.com';
+    const address = info?.address || 'Tamil Nadu, India';
+    const instagram = info?.instagram || 'https://www.instagram.com/kavithaigal_studio';
+    const whatsapp = info?.whatsapp || 'https://wa.me/919384684082';
+    const mapsUrl = info?.mapsUrl || '';
+    const workingHours = info?.workingHours || 'Mon – Sat: 9 AM – 7 PM';
+
+    // Safe formats for links
+    const tel1 = phone1.replace(/\D/g, '');
+    const tel2 = phone2.replace(/\D/g, '');
 
     return el('div', { className: 'contact-page' },
 
@@ -674,21 +679,21 @@ function Contact() {
         // Cards grid
         el('div', { className: 'contact-cards-grid' },
 
-            // Row 1: Phones (2 columns or 1 if phone2 missing)
+            // Row 1: Phones
             el(Reveal, { animation: 'fade-up', delay: 0, className: phone2 ? 'span-3' : 'span-6' },
-                el('a', { href: `tel:${phone1.replace(/\s/g, '')}`, className: 'contact-card' },
+                el('a', { href: `tel:${tel1}`, className: 'contact-card' },
                     el('div', { className: 'contact-card-icon', style: { background: 'linear-gradient(135deg,#ff2d6c,#c961e6)' } },
                         el('i', { className: 'fa-solid fa-phone' })
                     ),
                     el('div', { className: 'contact-card-body' },
                         el('h4', null, 'Primary Phone'),
-                        el('p', null, phone1 || '—')
+                        el('p', null, phone1)
                     )
                 )
             ),
 
             phone2 && el(Reveal, { animation: 'fade-up', delay: 100, className: 'span-3' },
-                el('a', { href: `tel:${phone2.replace(/\s/g, '')}`, className: 'contact-card' },
+                el('a', { href: `tel:${tel2}`, className: 'contact-card' },
                     el('div', { className: 'contact-card-icon', style: { background: 'linear-gradient(135deg,#e056fd,#686de0)' } },
                         el('i', { className: 'fa-solid fa-phone-volume' })
                     ),
@@ -699,7 +704,7 @@ function Contact() {
                 )
             ),
 
-            // Row 2: Digital (3 columns)
+            // Row 2: Digital
             el(Reveal, { animation: 'fade-up', delay: 200, className: 'span-2' },
                 el('a', { href: `mailto:${email}`, className: 'contact-card' },
                     el('div', { className: 'contact-card-icon', style: { background: 'linear-gradient(135deg,#f7971e,#ffd200)' } },
@@ -707,7 +712,7 @@ function Contact() {
                     ),
                     el('div', { className: 'contact-card-body' },
                         el('h4', null, 'Email'),
-                        el('p', null, email || 'kavithaigalstudio@gmail.com')
+                        el('p', null, email)
                     )
                 )
             ),
@@ -736,7 +741,7 @@ function Contact() {
                 )
             ),
 
-            // Row 3: Info (2 columns)
+            // Row 3: Info
             el(Reveal, { animation: 'fade-up', delay: 500, className: 'span-3' },
                 el('div', { className: 'contact-card' },
                     el('div', { className: 'contact-card-icon', style: { background: 'linear-gradient(135deg,#4e54c8,#8f94fb)' } },
@@ -744,7 +749,7 @@ function Contact() {
                     ),
                     el('div', { className: 'contact-card-body' },
                         el('h4', null, 'Working Hours'),
-                        el('p', null, workingHours || 'Mon – Sat: 9 AM – 7 PM')
+                        el('p', null, workingHours)
                     )
                 )
             ),
@@ -756,7 +761,7 @@ function Contact() {
                     ),
                     el('div', { className: 'contact-card-body' },
                         el('h4', null, 'Address'),
-                        el('p', null, address || 'Tamil Nadu, India'),
+                        el('p', null, address),
                         mapsUrl && el('a', { href: mapsUrl, target: '_blank', rel: 'noreferrer', className: 'contact-maps-link' },
                             el('i', { className: 'fa-solid fa-map' }), ' View on Maps'
                         )
