@@ -212,20 +212,6 @@ function Gallery({ onMenuToggle }) {
             .catch(err => console.error('Error fetching gallery:', err));
     }, []);
 
-    const [films, setFilms] = React.useState([]);
-
-    React.useEffect(() => {
-        fetch(`${window.API_URL}/api/gallery-films`)
-            .then(res => res.json())
-            .then(data => {
-                // Ensure data is an array before setting state
-                if (Array.isArray(data)) setFilms(data);
-            })
-            .catch(err => console.error('Error fetching gallery films:', err));
-    }, []);
-
-    const extendedFilms = films;
-
     return el('div', { className: 'montages-page' },
         el('div', { className: 'portfolio-header-area', style: { padding: '20px' } }),
 
@@ -253,8 +239,6 @@ function Gallery({ onMenuToggle }) {
                         })
                     );
 
-                    // Photos 1-8 are rendered INSTANTLY (0s delay) for immediate page paint.
-                    // Further photos use the Reveal component for the premium on-scroll pops.
                     if (idx < 8) {
                         return el('div', { key: idx, className: 'fancy-masonry-item' }, itemContent);
                     }
@@ -267,20 +251,6 @@ function Gallery({ onMenuToggle }) {
                         className: 'fancy-masonry-item'
                     }, itemContent);
                 })
-            )
-        ),
-
-        films.length > 0 && el('div', { className: 'montages-grid-container', style: { paddingTop: 0 } },
-            el(AppleTextReveal, { text: 'Cinematic Films', style: { textAlign: 'center', marginBottom: '3rem', fontSize: 'clamp(2.5rem, 6vw, 4rem)' } }),
-            el('div', { className: 'montages-grid' },
-                films.map((film, idx) =>
-                    el(VideoCard, {
-                        key: idx,
-                        title: film.title,
-                        videoUrl: film.url,
-                        thumbnail: film.thumb
-                    })
-                )
             )
         ),
 
